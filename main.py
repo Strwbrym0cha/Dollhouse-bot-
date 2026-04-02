@@ -82,7 +82,24 @@ class VerifyView(View):
         if r:
             await i.user.add_roles(r)
             await i.response.send_message("verified 💖",ephemeral=True)
+class RoleView(discord.ui.View):
+    @discord.ui.button(label="🎮 Game Night", style=discord.ButtonStyle.primary)
+    async def game(self, interaction, button):
+        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
+        if role:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message("added 💖", ephemeral=True)
 
+    @discord.ui.button(label="☕ Tea Time", style=discord.ButtonStyle.secondary)
+    async def tea(self, interaction, button):
+        role = discord.utils.get(interaction.guild.roles, name="☕ Tea Time Ping")
+        if role:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message("added 💖", ephemeral=True)
+
+@bot.command()
+async def roles(ctx):
+    await ctx.send(embed=doll_embed("🎀 Pick Roles","choose below 💖"), view=RoleView())
 @bot.command()
 async def sendverify(ctx):
     await ctx.send(embed=doll_embed("🔐 Verify","click below 💖"),view=VerifyView())
