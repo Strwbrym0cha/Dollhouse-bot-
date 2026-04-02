@@ -108,70 +108,82 @@ async def on_member_join(m):
 # 💬 CORE SYSTEM
 @bot.event
 async def on_message(m):
-    global count,last
+    global count, last
 
     if m.author.bot:
         return
 
-    uid=str(m.author.id)
-    name=m.author.display_name
+    uid = str(m.author.id)
+    name = m.author.display_name
 
-    # create/update user
-    cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
+    # 💖 CREATE / UPDATE USER
+    cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
     if not cur.fetchone():
-        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)",(uid,name))
+        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)", (uid,name))
     else:
-        cur.execute("UPDATE users SET name=%s WHERE user_id=%s",(name,uid))
+        cur.execute("UPDATE users SET name=%s WHERE user_id=%s", (name,uid))
     conn.commit()
 
-    # counting
-    if m.channel.id==COUNT_CH:
-        if m.author==last:
-            return await m.delete()
+    # 🔢 COUNTING (ONLY if NOT a command)
+    if not m.content.startswith("!") and m.channel.id == COUNT_CH:
+        if m.author == last:
+            await m.delete()
+            return
+
         try:
-            n=int(m.content)
+            n = int(m.content)
         except:
-            return await m.delete()
+            await m.delete()
+            return
 
-        if n!=count+1:
-            count=0
-            return await m.channel.send("💔 reset")
+        if n != count + 1:
+            count = 0
+            await m.channel.send("💔 reset")
+            return
 
-        count=n
-        last=m.author
+        count = n
+        last = m.author
 
-    # XP
-    gain=random.randint(5,10)
+    # 💎 XP (ONLY if NOT command)
+    if not m.content.startswith("!"):
+        gain = random.randint(5,10)
 
-    cur.execute("SELECT * FROM vip_users WHERE user_id=%s",(uid,))
-    if cur.fetchone():
-        gain*=2
+        cur.execute("SELECT * FROM vip_users WHERE user_id=%s", (uid,))
+        if cur.fetchone():
+            gain *= 2
 
-    cur.execute("UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",(gain,uid))
-    xp=cur.fetchone()[0]
+        cur.execute(
+            "UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",
+            (gain,uid)
+        )
+        xp = cur.fetchone()[0]
 
-    level=xp//50
-    cur.execute("UPDATE users SET level=%s WHERE user_id=%s",(level,uid))
-    conn.commit()
+        level = xp // 50
 
-    # roles
-    if level in LEVEL_ROLES:
-        role=discord.utils.get(m.guild.roles,name=LEVEL_ROLES[level])
-        if role and role not in m.author.roles:
-            await m.author.add_roles(role)
+        cur.execute(
+            "UPDATE users SET level=%s WHERE user_id=%s",
+            (level,uid)
+        )
+        conn.commit()
 
-    # rep
-    cur.execute("UPDATE users SET rep=rep+1 WHERE user_id=%s",(uid,))
-    conn.commit()
+        # 🎀 LEVEL ROLES
+        if level in LEVEL_ROLES:
+            role = discord.utils.get(m.guild.roles, name=LEVEL_ROLES[level])
+            if role and role not in m.author.roles:
+                await m.author.add_roles(role)
 
-    # AI replies
-    if "sad" in m.content.lower():
-        await m.channel.send(f"🧸 {name} I got you 💖")
+        # 💎 REP
+        cur.execute("UPDATE users SET rep=rep+1 WHERE user_id=%s", (uid,))
+        conn.commit()
 
-    if "lonely" in m.content.lower():
-        await m.channel.send("💖 you're not alone here")
+        # 🤖 AI REPLIES
+        if "sad" in m.content.lower():
+            await m.channel.send(f"🧸 {name} I got you 💖")
 
-    # ✅ THIS MUST BE LAST
+        if "lonely" in m.content.lower():
+            await m.channel.send("💖 you're not alone here")
+
+    # ✅ ONLY CALL ONCE AT END
     await bot.process_commands(m)
 # 🏆 COMMANDS
 @bot.command()
