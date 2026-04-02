@@ -148,21 +148,26 @@ async def menu(ctx):
     await ctx.send(embed=doll_embed(
         "🎀 Dollhouse Menu",
         """
-💖 **Core**
-!profile — view your stats  
-!daily — claim reward  
+💖 **Doll Commands**
+!doll — affirmation  
+!selfcare — self care tip  
+!vibe — aesthetic vibe  
+
+💎 **Progress**
+!profile — your stats  
+!daily — daily reward  
 !leaderboard — top dolls  
 
 🎟️ **Support**
-!ticketpanel — open a ticket  
+!ticketpanel — open ticket  
 
-🎀 **Roles & Access**
-!roles — get roles  
+🎀 **Access**
+!roles — pick roles  
 !verifypanel — verify  
 
 👩‍💻 **Staff**
 !clear <amount> — delete messages  
-!addvip @user — give VIP  
+!addvip @user — VIP  
 
 ✨ stay pretty & active 💖
 """
@@ -347,7 +352,34 @@ async def daily(ctx):
     conn2.commit()
 
     await ctx.send("🎁 +50 XP 💖")
+@bot.command()
+async def doll(ctx):
+    affirmations = [
+        "💖 you are THAT doll. don’t forget it.",
+        "✨ pretty, powerful, and unstoppable.",
+        "💅 soft doesn’t mean weak.",
+        "🎀 you deserve everything you dream of.",
+        "💎 you’re the main character, always."
+    ]
 
+    await ctx.send(embed=doll_embed(
+        "💖 Doll Affirmation",
+        random.choice(affirmations)
+    ))
+@bot.command()
+async def selfcare(ctx):
+    tips = [
+        "🛁 take a warm shower & reset your energy",
+        "📵 log off for a bit — protect your peace",
+        "💤 rest is productive too",
+        "🕯️ light a candle & breathe",
+        "🎧 listen to music and just exist"
+    ]
+
+    await ctx.send(embed=doll_embed(
+        "🧸 Self Care Reminder",
+        random.choice(tips)
+    ))    
 # 👩‍💻 STAFF PANEL
 @bot.command()
 @commands.has_permissions(administrator=True)
