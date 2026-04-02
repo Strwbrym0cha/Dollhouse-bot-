@@ -52,7 +52,7 @@ WELCOME=1487458364593017064
 EVENT=1487481426705256661
 LEVEL_CH=1487467727722643527
 COUNT_CH=1489330043510460547
-
+FRONT_DOOR = 1487458289221636277
 VERIFY_ROLE="Verified Doll"
 UNVERIFIED_ROLE="Unverified"
 
@@ -70,18 +70,35 @@ async def on_ready():
 
 # 🔐 JOIN + FRONT DOOR
 @bot.event
-async def on_member_join(m):
-    role=discord.utils.get(m.guild.roles,name=UNVERIFIED_ROLE)
-    if role: await m.add_roles(role)
-
+async def on_member_join(member):
+    role = discord.utils.get(member.guild.roles, name="Unverified Doll")
+    if role:
+        await member.add_roles(role)
 # 🔐 VERIFY BUTTON
-class VerifyView(View):
-    @discord.ui.button(label="Verify 💖",style=discord.ButtonStyle.success)
-    async def verify(self,i,b):
-        r=discord.utils.get(i.guild.roles,name=VERIFY_ROLE)
-        if r:
-            await i.user.add_roles(r)
-            await i.response.send_message("verified 💖",ephemeral=True)
+class VerifyView(discord.ui.View):
+    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success)
+    async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild = interaction.guild
+        user = interaction.user
+
+        verified = discord.utils.get(guild.roles, name="Verified Doll")
+        unverified = discord.utils.get(guild.roles, name="Unverified Doll")
+
+        if verified:
+            await user.add_roles(verified)
+
+        if unverified and unverified in user.roles:
+            await user.remove_roles(unverified)
+
+        await interaction.response.send_message(
+            "💖 Welcome inside the Dollhouse… stay pretty ✨",
+            ephemeral=True
+        )
+
+        # 💬 optional welcome message
+        channel = guild.get_channel(WELCOME)
+        if channel:
+            await channel.send(f"🎀 {user.mention} just entered the Dollhouse 💖")
 class RoleView(discord.ui.View):
     @discord.ui.button(label="🎮 Game Night", style=discord.ButtonStyle.primary)
     async def game(self, interaction, button):
@@ -96,7 +113,39 @@ class RoleView(discord.ui.View):
         if role:
             await interaction.user.add_roles(role)
             await interaction.response.send_message("added 💖", ephemeral=True)
+@bot.command()
+async def verifypanel(ctx):
+    await ctx.send(
+        embed=doll_embed(
+            "🔐 Dollhouse Entrance",
+            "Click below or type `?doll` to enter 💖"
+        ),
+        view=VerifyView()
+    )            
+@bot.command()
+async def menu(ctx):
+    await ctx.send(embed=doll_embed(
+        "🎀 Dollhouse Menu",
+        """
+💖 **Core**
+!profile — view your stats  
+!daily — claim reward  
+!leaderboard — top dolls  
 
+🎟️ **Support**
+!ticketpanel — open a ticket  
+
+🎀 **Roles & Access**
+!roles — get roles  
+!verifypanel — verify  
+
+👩‍💻 **Staff**
+!clear <amount> — delete messages  
+!addvip @user — give VIP  
+
+✨ stay pretty & active 💖
+"""
+    ))
 @bot.command()
 async def roles(ctx):
     await ctx.send(embed=doll_embed("🎀 Pick Roles","choose below 💖"), view=RoleView())
