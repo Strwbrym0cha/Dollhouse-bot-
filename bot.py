@@ -179,10 +179,17 @@ if data and data[0]:
         return await ctx.send("💖 come back later")
 @bot.command()
 async def daily(ctx):
+    import psycopg2
+    import datetime
+    import os
+
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    cur = conn.cursor()
+
     uid = str(ctx.author.id)
     now = datetime.datetime.utcnow()
 
-    # 💎 Ensure user exists
+    # 💖 ensure user exists
     cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
     if not cur.fetchone():
         cur.execute(
@@ -191,37 +198,23 @@ async def daily(ctx):
         )
         conn.commit()
 
-    # 🎀 Check last claim
-    cur.execute(
-        "SELECT last_claim FROM daily_rewards WHERE user_id=%s",
-        (uid,)
-    )
+    # 🎀 check cooldown
+    cur.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s", (uid,))
     data = cur.fetchone()
 
-    # ⏳ Cooldown check (24h)
     if data and data[0]:
-        last_claim = data[0]
+        last = data[0]
 
-        # make timezone safe
-        if last_claim.tzinfo is None:
-            last_claim = last_claim.replace(tzinfo=datetime.timezone.utc)
+        # FIX timezone crash
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=datetime.timezone.utc)
 
         now_aware = now.replace(tzinfo=datetime.timezone.utc)
 
-        remaining = 86400 - (now_aware - last_claim).total_seconds()
+        if (now_aware - last).total_seconds() < 86400:
+            return await ctx.send("💖 come back later")
 
-        if remaining > 0:
-            hours = int(remaining // 3600)
-            minutes = int((remaining % 3600) // 60)
-
-            return await ctx.send(
-                embed=doll_embed(
-                    "⏳ Daily Cooldown",
-                    f"Come back in {hours}h {minutes}m 💖"
-                )
-            )
-
-    # 🎁 Give reward
+    # 🎁 reward
     cur.execute(
         """
         INSERT INTO daily_rewards (user_id, last_claim)
@@ -238,12 +231,10 @@ async def daily(ctx):
     )
 
     conn.commit()
+    cur.close()
+    conn.close()
 
-    await ctx.send(
-        embed=doll_embed(
-            "🎁 Daily Reward",
-            f"{ctx.author.mention} you received **+50 XP** 💎✨"
-        )
+    await ctx.send("🎁 +50 XP 💖")
     )        
 @bot.command()
 async def leaderboard(ctx):
