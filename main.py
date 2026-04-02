@@ -68,20 +68,29 @@ count=0
 last=None
 
 # 💖 READY
-@bot.event
-async def on_ready():
-    print(f"{bot.user} online 💖")
-
-    bot.add_view(VerifyView())  # 💎 keeps button working after restart
-
-    auto.start()
-    weekly.start()
+@bot.command()
+async def verify(ctx):
+    await ctx.send(
+        embed=doll_embed(
+            "🔐 Dollhouse Entrance",
+            "Click below to enter 💖"
+        ),
+        view=RulesVerifyView()
+    )
 # 🔐 JOIN + FRONT DOOR
 @bot.event
 async def on_member_join(member):
     role = discord.utils.get(member.guild.roles, name="Unverified Doll")
     if role:
         await member.add_roles(role)
+
+    channel = member.guild.get_channel(WELCOME)
+    if channel:
+        await channel.send(embed=doll_embed(
+            "💖 A New Doll Arrived",
+            f"{member.mention} welcome to the Dollhouse ✨\n\n"
+            "🔐 Please read the rules & verify to enter 💅"
+        ))
 # 🔐 VERIFY BUTTON
 class RulesVerifyView(discord.ui.View):
     def __init__(self):
@@ -95,50 +104,39 @@ class RulesVerifyView(discord.ui.View):
         verified = discord.utils.get(guild.roles, name="Verified Doll")
         unverified = discord.utils.get(guild.roles, name="Unverified Doll")
 
+        # 💖 GIVE ROLE
         if verified:
             await user.add_roles(verified)
 
         if unverified and unverified in user.roles:
             await user.remove_roles(unverified)
 
+        # 🧠 SAVE TO DATABASE
+        cur.execute(
+            "UPDATE users SET mood='verified' WHERE user_id=%s",
+            (str(user.id),)
+        )
+        conn.commit()
+
+        # 💬 RESPONSE
         await interaction.response.send_message(
-            "💖 welcome inside the dollhouse… stay pretty ✨",
+            f"💖 welcome {user.name}… you made it inside ✨",
             ephemeral=True
         )
 
-        # 🎀 welcome message
+        # 🎀 WELCOME MESSAGE
         channel = guild.get_channel(WELCOME)
         if channel:
-            await channel.send(
-                embed=doll_embed(
-                    "🎀 New Doll Entered",
-                    f"{user.mention} just joined the dollhouse 💖"
-                )
-            )
-class RoleView(discord.ui.View):
-    @discord.ui.button(label="🎮 Game Night", style=discord.ButtonStyle.primary)
-    async def game(self, interaction, button):
-        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
-        if role:
-            await interaction.user.add_roles(role)
-            await interaction.response.send_message("added 💖", ephemeral=True)
+            vip = discord.utils.get(guild.roles, name="👑 VIP Doll")
 
-    @discord.ui.button(label="☕ Tea Time", style=discord.ButtonStyle.secondary)
-    async def tea(self, interaction, button):
-        role = discord.utils.get(interaction.guild.roles, name="☕ Tea Time Ping")
-        if role:
-            await interaction.user.add_roles(role)
-            await interaction.response.send_message("added 💖", ephemeral=True)
-@bot.command()
-async def verify(ctx):
-    await ctx.send(
-        embed=doll_embed(
-            "🔐 Dollhouse Entrance",
-            "Click the button below to enter 💖\n\n✨ must be 18+"
-        ),
-        view=VerifyView()
-    )
-    
+            if vip and vip in user.roles:
+                await channel.send("👑 VIP has entered… welcome back 💎")
+
+            elif "doll" in user.name.lower():
+                await channel.send("💅 omg another doll entered… iconic.")
+
+            else:
+                await channel.send(f"🎀 {user.mention} welcome, stay soft & powerful 💖")
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def personality(ctx, mode: str):
@@ -321,9 +319,10 @@ async def on_message(m):
 # 🏆 COMMANDS
 @bot.command()
 async def rulespanel(ctx):
-    await ctx.send(embed=doll_embed(
-        "💖 DOLLHOUSE RULES",
-        """
+    await ctx.send(
+        embed=doll_embed(
+            "💖 DOLLHOUSE RULES",
+            """
 🔞 **this is an 18+ server only**  
 by staying, you confirm you are 18 or older  
 
@@ -349,9 +348,11 @@ our dollhouse team keeps everything safe and smooth
 
 ━━━━━━━━━━━━━━━━━━━  
 
-💖 click verify to enter below ✨
+💖 click below to agree & enter ✨
 """
-    ))
+        ),
+        view=RulesVerifyView()
+    )
 @bot.command()
 async def currentpersonality(ctx):
     cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
@@ -464,5 +465,22 @@ async def weekly():
         await g.get_channel(EVENT).send("🎮 game night 💖")
     if now.weekday()==6 and now.hour==18:
         await g.get_channel(EVENT).send("☕ tea time 💖")
+@tasks.loop(minutes=5)
+async def check_unverified():
+    for guild in bot.guilds:
+        role = discord.utils.get(guild.roles, name="Unverified Doll")
+        if not role:
+            continue
 
+        for member in guild.members:
+            if role in member.roles:
+                joined = member.joined_at
+                if joined:
+                    diff = (datetime.datetime.utcnow() - joined.replace(tzinfo=None)).total_seconds()
+                    
+                    if diff > 900:  # ⏱️ 15 minutes
+                        try:
+                            await member.kick(reason="Not verified in time")
+                        except:
+                            pass
 bot.run(TOKEN)
