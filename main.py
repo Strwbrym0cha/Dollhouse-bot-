@@ -11,7 +11,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # 💎 DATABASE
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
-
+cur.execute("""
+CREATE TABLE IF NOT EXISTS personalities (
+    guild_id TEXT PRIMARY KEY,
+    mode TEXT DEFAULT 'soft'
+)
+""")
+conn.commit()
 cur.execute("""CREATE TABLE IF NOT EXISTS users (
 user_id TEXT PRIMARY KEY,
 name TEXT,
@@ -121,7 +127,22 @@ async def verifypanel(ctx):
             "Click below or type `?doll` to enter 💖"
         ),
         view=VerifyView()
-    )            
+    )  
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def personality(ctx, mode: str):
+    mode = mode.lower()
+
+    if mode not in ["soft", "sassy", "sweet", "strict"]:
+        return await ctx.send("💖 modes: soft, sassy, sweet, strict")
+
+    cur.execute(
+        "INSERT INTO personalities (guild_id, mode) VALUES (%s,%s) ON CONFLICT (guild_id) DO UPDATE SET mode=%s",
+        (str(ctx.guild.id), mode, mode)
+    )
+    conn.commit()
+
+    await ctx.send(f"🎀 personality set to **{mode}** 💖")    
 @bot.command()
 async def menu(ctx):
     await ctx.send(embed=doll_embed(
@@ -190,7 +211,9 @@ async def on_message(m):
 
     uid=str(m.author.id)
     name=m.author.display_name
-
+cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(m.guild.id),))
+row = cur.fetchone()
+mode = row[0] if row else "soft"
     # 🧠 MEMORY
     cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
     if not cur.fetchone():
@@ -239,8 +262,23 @@ async def on_message(m):
         conn.commit()
 
         # 🤖 AI
-        if "sad" in m.content.lower():
-            await m.channel.send(f"🧸 {name} I got you 💖")
+       content = m.content.lower()
+
+if "sad" in content:
+    if mode == "soft":
+        await m.channel.send(f"🧸 {name} I’m here for you 💖")
+    elif mode == "sassy":
+        await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
+    elif mode == "sweet":
+        await m.channel.send("💖 sending you hugs and love ✨")
+    elif mode == "strict":
+        await m.channel.send("⚖️ focus. you got this.")
+
+if "lonely" in content:
+    if mode == "soft":
+        await m.channel.send("💖 you’re not alone here")
+    elif mode == "sassy":
+        await m.channel.send("pls you have us, don’t be dramatic 💅")
 
     # ⚖️ SOFT MOD
     if m.content.isupper() and len(m.content)>15:
@@ -250,6 +288,13 @@ async def on_message(m):
     await bot.process_commands(m)
 
 # 🏆 COMMANDS
+@bot.command()
+async def currentpersonality(ctx):
+    cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
+    row = cur.fetchone()
+    mode = row[0] if row else "soft"
+
+    await ctx.send(f"💖 current personality: **{mode}**")
 @bot.command()
 async def profile(ctx):
     cur.execute("SELECT xp,level,rep FROM users WHERE user_id=%s",(str(ctx.author.id),))
