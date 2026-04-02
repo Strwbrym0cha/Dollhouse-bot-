@@ -174,16 +174,77 @@ await bot.process_commands(m)
 
 # 🏆 COMMANDS
 
+if data and data[0]:
+    if (now - data[0]).total_seconds() < 86400:
+        return await ctx.send("💖 come back later")
 @bot.command()
-async def profile(ctx):
-    cur.execute("SELECT xp,level,rep FROM users WHERE user_id=%s",(str(ctx.author.id),))
-    data=cur.fetchone()
-    if not data:
-        return await ctx.send("no data")
+async def daily(ctx):
+    uid = str(ctx.author.id)
+    now = datetime.datetime.utcnow()
 
-    xp,level,rep=data
-    await ctx.send(embed=doll_embed("💖 Profile",f"Level: {level}\nXP: {xp}\nRep: {rep}"))
+    # 💎 Ensure user exists
+    cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
+    if not cur.fetchone():
+        cur.execute(
+            "INSERT INTO users (user_id, name) VALUES (%s, %s)",
+            (uid, ctx.author.display_name)
+        )
+        conn.commit()
 
+    # 🎀 Check last claim
+    cur.execute(
+        "SELECT last_claim FROM daily_rewards WHERE user_id=%s",
+        (uid,)
+    )
+    data = cur.fetchone()
+
+    # ⏳ Cooldown check (24h)
+    if data and data[0]:
+        last_claim = data[0]
+
+        # make timezone safe
+        if last_claim.tzinfo is None:
+            last_claim = last_claim.replace(tzinfo=datetime.timezone.utc)
+
+        now_aware = now.replace(tzinfo=datetime.timezone.utc)
+
+        remaining = 86400 - (now_aware - last_claim).total_seconds()
+
+        if remaining > 0:
+            hours = int(remaining // 3600)
+            minutes = int((remaining % 3600) // 60)
+
+            return await ctx.send(
+                embed=doll_embed(
+                    "⏳ Daily Cooldown",
+                    f"Come back in {hours}h {minutes}m 💖"
+                )
+            )
+
+    # 🎁 Give reward
+    cur.execute(
+        """
+        INSERT INTO daily_rewards (user_id, last_claim)
+        VALUES (%s, %s)
+        ON CONFLICT (user_id)
+        DO UPDATE SET last_claim=%s
+        """,
+        (uid, now, now)
+    )
+
+    cur.execute(
+        "UPDATE users SET xp = xp + 50 WHERE user_id=%s",
+        (uid,)
+    )
+
+    conn.commit()
+
+    await ctx.send(
+        embed=doll_embed(
+            "🎁 Daily Reward",
+            f"{ctx.author.mention} you received **+50 XP** 💎✨"
+        )
+    )        
 @bot.command()
 async def leaderboard(ctx):
     cur.execute("SELECT user_id,xp FROM users ORDER BY xp DESC LIMIT 10")
@@ -198,27 +259,26 @@ async def leaderboard(ctx):
     await ctx.send(embed=doll_embed("💎 Top Dolls",text))
 
 @bot.command()
-async def daily(ctx):
-    uid=str(ctx.author.id)
-    now=datetime.datetime.utcnow()
+async def profile(ctx):
+    uid = str(ctx.author.id)
 
-    cur.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s",(uid,))
-    data=cur.fetchone()
+    cur.execute("SELECT xp,level,rep FROM users WHERE user_id=%s",(uid,))
+    data = cur.fetchone()
 
-    if data:
-        if (now-data[0]).total_seconds()<86400:
-            return await ctx.send("💖 come back later")
+    if not data:
+        cur.execute(
+            "INSERT INTO users (user_id,name) VALUES (%s,%s)",
+            (uid, ctx.author.display_name)
+        )
+        conn.commit()
+        return await ctx.send("💖 profile created! run again")
 
-    cur.execute(
-        "INSERT INTO daily_rewards (user_id,last_claim) VALUES (%s,%s) ON CONFLICT (user_id) DO UPDATE SET last_claim=%s",
-        (uid,now,now)
-    )
+    xp, level, rep = data
 
-    cur.execute("UPDATE users SET xp=xp+50 WHERE user_id=%s",(uid,))
-    conn.commit()
-
-    await ctx.send("🎁 +50 XP")
-
+    await ctx.send(embed=doll_embed(
+        "💖 Profile",
+        f"Level: {level}\nXP: {xp}\nRep: {rep}"
+    ))
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def settier(ctx,user:discord.Member,tier:str):
