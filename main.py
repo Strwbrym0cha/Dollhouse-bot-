@@ -324,6 +324,39 @@ async def on_message(m):
 
 # 🏆 COMMANDS
 @bot.command()
+async def rulespanel(ctx):
+    await ctx.send(embed=doll_embed(
+        "💖 DOLLHOUSE RULES",
+        """
+🔞 **this is an 18+ server only**  
+by staying, you confirm you are 18 or older  
+
+━━━━━━━━━━━━━━━━━━━  
+
+💖 **1. be kind, always**  
+treat every doll with respect — no bullying or harassment  
+
+💖 **2. no hate or discrimination**  
+this is a safe and inclusive space for everyone  
+
+💖 **3. keep it cute**  
+light profanity is okay, but don’t use it to attack others  
+
+💖 **4. no spam or unwanted promo**  
+only promote in the correct channels  
+
+💖 **5. nsfw stays in nsfw channels**  
+must be verified to access  
+
+💖 **6. listen to staff**  
+our dollhouse team keeps everything safe and smooth  
+
+━━━━━━━━━━━━━━━━━━━  
+
+💖 click verify to enter below ✨
+"""
+    ))
+@bot.command()
 async def currentpersonality(ctx):
     cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
     row = cur.fetchone()
