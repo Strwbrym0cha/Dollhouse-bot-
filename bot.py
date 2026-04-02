@@ -3,7 +3,6 @@ import io
 import random
 import asyncio
 import datetime
-import psycopg2
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View
