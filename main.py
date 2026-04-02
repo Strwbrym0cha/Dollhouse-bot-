@@ -83,11 +83,11 @@ async def on_member_join(member):
     if role:
         await member.add_roles(role)
 # 🔐 VERIFY BUTTON
-class VerifyView(discord.ui.View):
+class RulesVerifyView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None)  # 💎 keeps button alive forever
+        super().__init__(timeout=None)
 
-    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success, custom_id="verify_button")
+    @discord.ui.button(label="Agree & Enter 💖", style=discord.ButtonStyle.success, custom_id="rules_verify")
     async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = interaction.guild
         user = interaction.user
@@ -115,10 +115,6 @@ class VerifyView(discord.ui.View):
                     f"{user.mention} just joined the dollhouse 💖"
                 )
             )
-        # 💬 optional welcome message
-        channel = guild.get_channel(WELCOME)
-        if channel:
-            await channel.send(f"🎀 {user.mention} just entered the Dollhouse 💖")
 class RoleView(discord.ui.View):
     @discord.ui.button(label="🎮 Game Night", style=discord.ButtonStyle.primary)
     async def game(self, interaction, button):
