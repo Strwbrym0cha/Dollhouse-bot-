@@ -71,9 +71,11 @@ last=None
 @bot.event
 async def on_ready():
     print(f"{bot.user} online 💖")
+
+    bot.add_view(VerifyView())  # 💎 keeps button working after restart
+
     auto.start()
     weekly.start()
-
 # 🔐 JOIN + FRONT DOOR
 @bot.event
 async def on_member_join(member):
@@ -82,7 +84,10 @@ async def on_member_join(member):
         await member.add_roles(role)
 # 🔐 VERIFY BUTTON
 class VerifyView(discord.ui.View):
-    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success)
+    def __init__(self):
+        super().__init__(timeout=None)  # 💎 keeps button alive forever
+
+    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success, custom_id="verify_button")
     async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = interaction.guild
         user = interaction.user
@@ -97,10 +102,19 @@ class VerifyView(discord.ui.View):
             await user.remove_roles(unverified)
 
         await interaction.response.send_message(
-            "💖 Welcome inside the Dollhouse… stay pretty ✨",
+            "💖 welcome inside the dollhouse… stay pretty ✨",
             ephemeral=True
         )
 
+        # 🎀 welcome message
+        channel = guild.get_channel(WELCOME)
+        if channel:
+            await channel.send(
+                embed=doll_embed(
+                    "🎀 New Doll Entered",
+                    f"{user.mention} just joined the dollhouse 💖"
+                )
+            )
         # 💬 optional welcome message
         channel = guild.get_channel(WELCOME)
         if channel:
@@ -120,14 +134,15 @@ class RoleView(discord.ui.View):
             await interaction.user.add_roles(role)
             await interaction.response.send_message("added 💖", ephemeral=True)
 @bot.command()
-async def verifypanel(ctx):
+async def verify(ctx):
     await ctx.send(
         embed=doll_embed(
             "🔐 Dollhouse Entrance",
-            "Click below or type `?doll` to enter 💖"
+            "Click the button below to enter 💖\n\n✨ must be 18+"
         ),
         view=VerifyView()
-    )  
+    )
+    
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def personality(ctx, mode: str):
