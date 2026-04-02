@@ -336,6 +336,7 @@ async def weekly_rewards():
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    save(memory, "memory.json")
     weekly.start()
     auto.start()
     weekly_rewards.start()
