@@ -51,7 +51,22 @@ last  = None
 
 
 # ── Database helpers ──────────────────────────────────────────────────────────
+import psycopg2
+import os
 
+conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+cur = conn.cursor()
+
+# create table if not exists
+cur.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    name TEXT,
+    rep INT DEFAULT 0,
+    mood TEXT DEFAULT 'neutral'
+)
+""")
+conn.commit()
 def get_db():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
