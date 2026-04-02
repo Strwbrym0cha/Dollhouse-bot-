@@ -357,15 +357,6 @@ our dollhouse team keeps everything safe and smooth
 """
     ))
 @bot.command()
-async def rulespanel(ctx):
-    await ctx.send(
-        embed=doll_embed(
-            "💖 DOLLHOUSE RULES",
-            "read & click below to enter 💖"
-        ),
-        view=VerifyView()
-    )    
-@bot.command()
 async def currentpersonality(ctx):
     cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
     row = cur.fetchone()
