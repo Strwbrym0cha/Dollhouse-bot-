@@ -791,4 +791,4 @@ async def clearuser(ctx, member: discord.Member, amount: int):
     )
 
 
-bot.run(os.environ["DISCORD_BOT_TOKEN"])
+bot.run(os.environ["TOKEN"])
