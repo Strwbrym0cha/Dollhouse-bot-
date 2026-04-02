@@ -115,7 +115,7 @@ async def on_message(m):
 
     uid=str(m.author.id)
     name=m.author.display_name
-
+await bot.process_commands(m)
     # create/update user
     cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
     if not cur.fetchone():
