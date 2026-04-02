@@ -204,87 +204,102 @@ async def close(ctx):
 # 💬 CORE SYSTEM
 @bot.event
 async def on_message(m):
-    global count,last
+    global count, last
 
     if m.author.bot:
         return
 
-    uid=str(m.author.id)
-    name=m.author.display_name
-cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(m.guild.id),))
-row = cur.fetchone()
-mode = row[0] if row else "soft"
+    uid = str(m.author.id)
+    name = m.author.display_name
+
+    # 💖 GET PERSONALITY
+    cur.execute(
+        "SELECT mode FROM personalities WHERE guild_id=%s",
+        (str(m.guild.id),)
+    )
+    row = cur.fetchone()
+    mode = row[0] if row else "soft"
+
     # 🧠 MEMORY
-    cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
+    cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
     if not cur.fetchone():
-        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)",(uid,name))
+        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)", (uid, name))
     else:
-        cur.execute("UPDATE users SET name=%s WHERE user_id=%s",(name,uid))
+        cur.execute("UPDATE users SET name=%s WHERE user_id=%s", (name, uid))
     conn.commit()
 
     # 🔢 COUNTING
-    if not m.content.startswith("!") and m.channel.id==COUNT_CH:
-        if m.author==last:
+    if not m.content.startswith("!") and m.channel.id == COUNT_CH:
+        if m.author == last:
             return await m.delete()
         try:
-            n=int(m.content)
+            n = int(m.content)
         except:
             return await m.delete()
-        if n!=count+1:
-            count=0
+
+        if n != count + 1:
+            count = 0
             return await m.channel.send("💔 reset")
-        count=n
-        last=m.author
 
-    # 💎 XP + LEVEL
+        count = n
+        last = m.author
+
+    # 💎 XP SYSTEM
     if not m.content.startswith("!"):
-        gain=random.randint(5,10)
+        gain = random.randint(5, 10)
 
-        cur.execute("SELECT * FROM vip_users WHERE user_id=%s",(uid,))
+        cur.execute("SELECT * FROM vip_users WHERE user_id=%s", (uid,))
         if cur.fetchone():
-            gain*=2
+            gain *= 2
 
-        cur.execute("UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",(gain,uid))
-        xp=cur.fetchone()[0]
+        cur.execute(
+            "UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",
+            (gain, uid)
+        )
+        xp = cur.fetchone()[0]
 
-        level=xp//50
-        cur.execute("UPDATE users SET level=%s WHERE user_id=%s",(level,uid))
+        level = xp // 50
+        cur.execute(
+            "UPDATE users SET level=%s WHERE user_id=%s",
+            (level, uid)
+        )
         conn.commit()
 
-        # roles
+        # 🎀 LEVEL ROLES
         if level in LEVEL_ROLES:
-            role=discord.utils.get(m.guild.roles,name=LEVEL_ROLES[level])
+            role = discord.utils.get(m.guild.roles, name=LEVEL_ROLES[level])
             if role and role not in m.author.roles:
                 await m.author.add_roles(role)
 
         # 💖 REP
-        cur.execute("UPDATE users SET rep=rep+1 WHERE user_id=%s",(uid,))
+        cur.execute("UPDATE users SET rep=rep+1 WHERE user_id=%s", (uid,))
         conn.commit()
 
-        # 🤖 AI
-       content = m.content.lower()
+        # 🤖 PERSONALITY RESPONSES
+        content = m.content.lower()
 
-if "sad" in content:
-    if mode == "soft":
-        await m.channel.send(f"🧸 {name} I’m here for you 💖")
-    elif mode == "sassy":
-        await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
-    elif mode == "sweet":
-        await m.channel.send("💖 sending you hugs and love ✨")
-    elif mode == "strict":
-        await m.channel.send("⚖️ focus. you got this.")
+        if "sad" in content:
+            if mode == "soft":
+                await m.channel.send(f"🧸 {name} I’m here for you 💖")
+            elif mode == "sassy":
+                await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
+            elif mode == "sweet":
+                await m.channel.send("💖 sending you hugs and love ✨")
+            elif mode == "strict":
+                await m.channel.send("⚖️ focus. you got this.")
 
-if "lonely" in content:
-    if mode == "soft":
-        await m.channel.send("💖 you’re not alone here")
-    elif mode == "sassy":
-        await m.channel.send("pls you have us, don’t be dramatic 💅")
+        if "lonely" in content:
+            if mode == "soft":
+                await m.channel.send("💖 you’re not alone here")
+            elif mode == "sassy":
+                await m.channel.send("pls you have us, don’t be dramatic 💅")
 
     # ⚖️ SOFT MOD
-    if m.content.isupper() and len(m.content)>15:
+    if m.content.isupper() and len(m.content) > 15:
         await m.delete()
         await m.channel.send("💖 keep it cute")
 
+    # ✅ MUST BE LAST
     await bot.process_commands(m)
 
 # 🏆 COMMANDS
