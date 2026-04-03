@@ -154,10 +154,11 @@ async def on_ready():
     bot.add_view(GenderView())
     bot.add_view(EventView())
     bot.add_view(Ticket())
+
     doll_of_day.start()
     auto.start()
     weekly.start()
-
+    check_unverified.start()  # 💖 ADD THIS
 # 💬 MESSAGE SYSTEM
 # 💖 FIXED CRITICAL SECTION (REPLACE YOUR on_message)
 
@@ -353,7 +354,9 @@ async def shop(ctx):
     ))
 @bot.command()
 async def rolespanel(ctx):
-    await ctx.send(embed=doll_embed("Roles","💖"),view=AgeView())
+    await ctx.send(embed=doll_embed("🔞 Age","💖"),view=AgeView())
+    await ctx.send(embed=doll_embed("💅 Gender","💖"),view=GenderView())
+    await ctx.send(embed=doll_embed("🎮 Events","💖"),view=EventView())
 
 @bot.command()
 async def ticketpanel(ctx):
@@ -379,10 +382,11 @@ async def leaderboard(ctx):
 @commands.has_permissions(administrator=True)
 async def addvip(ctx, member: discord.Member):
     cur.execute(
-    "INSERT INTO vip_users (user_id) VALUES (%s) ON CONFLICT DO NOTHING",
-    (str(member.id),)
-)
-conn.commit()
+        "INSERT INTO vip_users (user_id) VALUES (%s) ON CONFLICT DO NOTHING",
+        (str(member.id),)
+    )
+    conn.commit()
+
     await ctx.send(f"{member.mention} is VIP 💎")
 @bot.command()
 @commands.has_permissions(administrator=True)
