@@ -173,10 +173,10 @@ async def on_message(m):
         cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)",(uid,m.author.name))
     coins = random.randint(1, 5)
     cur.execute(
-    "UPDATE users SET coins=coins+%s WHERE user_id=%s",
+    "UPDATE users SET coins=coins+%s WHERE user_id=%s",)
     cur.execute(
     "UPDATE users SET name=%s WHERE user_id=%s",
-    (m.author.display_name, uid)  
+    (m.author.display_name, uid))
     (coins, uid) 
     if random.randint(1, 20) == 1:
     await m.channel.send("💖 you're doing amazing, keep chatting ✨")    
