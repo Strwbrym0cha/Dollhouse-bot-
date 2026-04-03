@@ -1,7 +1,8 @@
+# 💖 IMPORTS
 import discord
 from discord.ext import commands, tasks
-from discord.ui import View, Button
-import random, asyncio, datetime, os, io
+from discord.ui import View, Select
+import random, datetime, os, io
 from zoneinfo import ZoneInfo
 import psycopg2
 
@@ -11,35 +12,43 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # 💎 DATABASE
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
-cur.execute("""
-CREATE TABLE IF NOT EXISTS personalities (
-    guild_id TEXT PRIMARY KEY,
-    mode TEXT DEFAULT 'soft'
-)
-""")
-conn.commit()
+
 cur.execute("""CREATE TABLE IF NOT EXISTS users (
 user_id TEXT PRIMARY KEY,
 name TEXT,
 rep INT DEFAULT 0,
-mood TEXT DEFAULT 'neutral',
 xp INT DEFAULT 0,
 level INT DEFAULT 0
 )""")
 
 cur.execute("""CREATE TABLE IF NOT EXISTS vip_users (
-user_id TEXT PRIMARY KEY)""")
+user_id TEXT PRIMARY KEY
+)""")
 
 cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
 id SERIAL PRIMARY KEY,
 user_id TEXT,
-channel_id TEXT,
-status TEXT DEFAULT 'open')""")
+channel_id TEXT
+)""")
+
+cur.execute("""CREATE TABLE IF NOT EXISTS warnings (
+user_id TEXT,
+count INT DEFAULT 0
+)""")
+
+cur.execute("""CREATE TABLE IF NOT EXISTS personalities (
+guild_id TEXT PRIMARY KEY,
+mode TEXT DEFAULT 'soft'
+)""")
 
 cur.execute("""CREATE TABLE IF NOT EXISTS daily_rewards (
 user_id TEXT PRIMARY KEY,
-last_claim TIMESTAMP)""")
-
+last_claim TIMESTAMP
+)""")
+cur.execute("""
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS coins INT DEFAULT 0
+""")
 conn.commit()
 
 # 💖 BOT
@@ -50,145 +59,78 @@ PINK = discord.Color.from_rgb(255,182,193)
 
 def doll_embed(t,d):
     e=discord.Embed(title=t,description=d,color=PINK)
-    e.set_footer(text="💖 Dollhouse • stay soft & powerful")
+    e.set_footer(text="💖 Dollhouse")
     return e
 
-# 📍 IDS (keep yours)
+# 📍 IDS
 WELCOME=1487458364593017064
 EVENT=1487481426705256661
 LEVEL_CH=1487467727722643527
 COUNT_CH=1489330043510460547
-FRONT_DOOR = 1487458289221636277
-VERIFY_ROLE="Verified Doll"
-UNVERIFIED_ROLE="Unverified"
 
-LEVEL_ROLES={1:"porcelain doll",5:"ribbon doll",10:"velvet doll",15:"lace doll",20:"star doll",30:"royal doll",40:"diamond doll"}
+LEVEL_ROLES={1:"🧸 Porcelain Doll",5:"🎀 Ribbon Doll",10:"💖 Velvet Doll",15:"🌸 Lace Doll",20:"✨ Star Doll",30:"👑 Royal Doll",40:"💎 Diamond Doll"}
 
 count=0
 last=None
 
-# 💖 READY
-@bot.command()
-async def verify(ctx):
-    await ctx.send(
-        embed=doll_embed(
-            "🔐 Dollhouse Entrance",
-            "Click below to enter 💖"
-        ),
-        view=RulesVerifyView()
-    )
-# 🔐 JOIN + FRONT DOOR
-@bot.event
-async def on_member_join(member):
-    role = discord.utils.get(member.guild.roles, name="Unverified Doll")
-    if role:
-        await member.add_roles(role)
-
-    channel = member.guild.get_channel(WELCOME)
-    if channel:
-        await channel.send(embed=doll_embed(
-            "💖 A New Doll Arrived",
-            f"{member.mention} welcome to the Dollhouse ✨\n\n"
-            "🔐 Please read the rules & verify to enter 💅"
-        ))
-# 🔐 VERIFY BUTTON
-class RulesVerifyView(discord.ui.View):
+# 🔐 VERIFY
+class VerifyView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Agree & Enter 💖", style=discord.ButtonStyle.success, custom_id="rules_verify")
-    async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild = interaction.guild
-        user = interaction.user
+    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success)
+    async def verify(self, interaction, button):
+        g=interaction.guild
+        u=interaction.user
 
-        verified = discord.utils.get(guild.roles, name="Verified Doll")
-        unverified = discord.utils.get(guild.roles, name="Unverified Doll")
+        v=discord.utils.get(g.roles,name="Verified Doll")
+        uv=discord.utils.get(g.roles,name="Unverified Doll")
 
-        # 💖 GIVE ROLE
-        if verified:
-            await user.add_roles(verified)
+        if v: await u.add_roles(v)
+        if uv and uv in u.roles: await u.remove_roles(uv)
 
-        if unverified and unverified in user.roles:
-            await user.remove_roles(unverified)
+        await interaction.response.send_message("💖 welcome inside ✨",ephemeral=True)
 
-        # 🧠 SAVE TO DATABASE
-        cur.execute(
-            "UPDATE users SET mood='verified' WHERE user_id=%s",
-            (str(user.id),)
-        )
-        conn.commit()
+# 🎀 ROLE SELECT
+class RoleSelect(Select):
+    def __init__(self, placeholder, roles, emojis):
+        options=[discord.SelectOption(label=r,emoji=e) for r,e in zip(roles,emojis)]
+        super().__init__(placeholder=placeholder, options=options)
+        self.role_names=roles
 
-        # 💬 RESPONSE
-        await interaction.response.send_message(
-            f"💖 welcome {user.name}… you made it inside ✨",
-            ephemeral=True
-        )
+    async def callback(self, interaction):
+        for role in interaction.guild.roles:
+            if role.name in self.role_names:
+                await interaction.user.remove_roles(role)
 
-        # 🎀 WELCOME MESSAGE
-        channel = guild.get_channel(WELCOME)
-        if channel:
-            vip = discord.utils.get(guild.roles, name="👑 VIP Doll")
+        role=discord.utils.get(interaction.guild.roles,name=self.values[0])
+        if role:
+            await interaction.user.add_roles(role)
 
-            if vip and vip in user.roles:
-                await channel.send("👑 VIP has entered… welcome back 💎")
+        await interaction.response.send_message("💖 updated!",ephemeral=True)
 
-            elif "doll" in user.name.lower():
-                await channel.send("💅 omg another doll entered… iconic.")
+# 🎀 ROLE VIEWS
+class AgeView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(RoleSelect("Age 💖",["🔞 18–20","💖 21–25","👑 26+"],["🔞","💖","👑"]))
 
-            else:
-                await channel.send(f"🎀 {user.mention} welcome, stay soft & powerful 💖")
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def personality(ctx, mode: str):
-    mode = mode.lower()
+class GenderView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(RoleSelect("Gender 💅",["💖 Girl","💙 Boy","🌸 Non-binary","🖤 Prefer not"],["💖","💙","🌸","🖤"]))
 
-    if mode not in ["soft", "sassy", "sweet", "strict"]:
-        return await ctx.send("💖 modes: soft, sassy, sweet, strict")
+class EventView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
-    cur.execute(
-        "INSERT INTO personalities (guild_id, mode) VALUES (%s,%s) ON CONFLICT (guild_id) DO UPDATE SET mode=%s",
-        (str(ctx.guild.id), mode, mode)
-    )
-    conn.commit()
+    @discord.ui.button(label="🎮 Game Night")
+    async def game(self,i,b):
+        role=discord.utils.get(i.guild.roles,name="🎮 Game Night Ping")
+        if role: await i.user.add_roles(role)
+        await i.response.send_message("🎮 added!",ephemeral=True)
 
-    await ctx.send(f"🎀 personality set to **{mode}** 💖")    
-@bot.command()
-async def menu(ctx):
-    await ctx.send(embed=doll_embed(
-        "🎀 Dollhouse Menu",
-        """
-💖 **Doll Commands**
-!doll — affirmation  
-!selfcare — self care tip  
-!vibe — aesthetic vibe  
-
-💎 **Progress**
-!profile — your stats  
-!daily — daily reward  
-!leaderboard — top dolls  
-
-🎟️ **Support**
-!ticketpanel — open ticket  
-
-🎀 **Access**
-!roles — pick roles  
-!verifypanel — verify  
-
-👩‍💻 **Staff**
-!clear <amount> — delete messages  
-!addvip @user — VIP  
-
-✨ stay pretty & active 💖
-"""
-    ))
-@bot.command()
-async def roles(ctx):
-    await ctx.send(embed=doll_embed("🎀 Pick Roles","choose below 💖"), view=RoleView())
-@bot.command()
-async def sendverify(ctx):
-    await ctx.send(embed=doll_embed("🔐 Verify","click below 💖"),view=VerifyView())
-
-# 🎟️ TICKETS
+# 🎟️ TICKET
 class Ticket(View):
     @discord.ui.button(label="Open Ticket 💌",style=discord.ButtonStyle.success)
     async def open(self,i,b):
@@ -200,173 +142,148 @@ class Ticket(View):
         cur.execute("INSERT INTO tickets (user_id,channel_id) VALUES (%s,%s)",(str(i.user.id),str(ch.id)))
         conn.commit()
 
-        await ch.send(f"{i.user.mention} staff will help 💖")
+        await ch.send(f"{i.user.mention} support will help 💖")
 
-@bot.command()
-async def ticketpanel(ctx):
-    await ctx.send(embed=doll_embed("💌 Support","open ticket 💖"),view=Ticket())
+# 💖 READY
+@bot.event
+async def on_ready():
+    print("online 💖")
 
-@bot.command()
-async def close(ctx):
-    msgs=[]
-    async for m in ctx.channel.history(limit=100):
-        msgs.append(f"{m.author}: {m.content}")
-    file=discord.File(io.StringIO("\n".join(msgs)),"transcript.txt")
-    await ctx.send(file=file)
-    await ctx.channel.delete()
+    bot.add_view(VerifyView())
+    bot.add_view(AgeView())
+    bot.add_view(GenderView())
+    bot.add_view(EventView())
+    bot.add_view(Ticket())
+    doll_of_day.start()
+    auto.start()
+    weekly.start()
 
-# 💬 CORE SYSTEM
+# 💬 MESSAGE SYSTEM
 @bot.event
 async def on_message(m):
-    global count, last
+    global count,last
 
     if m.author.bot:
         return
 
-    uid = str(m.author.id)
-    name = m.author.display_name
+    uid=str(m.author.id)
 
-    # 💖 GET PERSONALITY
-    cur.execute(
-        "SELECT mode FROM personalities WHERE guild_id=%s",
-        (str(m.guild.id),)
-    )
-    row = cur.fetchone()
-    mode = row[0] if row else "soft"
-
-    # 🧠 MEMORY
-    cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
+    cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
     if not cur.fetchone():
-        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)", (uid, name))
-    else:
-        cur.execute("UPDATE users SET name=%s WHERE user_id=%s", (name, uid))
+        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)",(uid,m.author.name))
+    coins = random.randint(1, 5)
+    cur.execute(
+    "UPDATE users SET coins=coins+%s WHERE user_id=%s",
+    cur.execute(
+    "UPDATE users SET name=%s WHERE user_id=%s",
+    (m.author.display_name, uid)  
+    (coins, uid) 
+    if random.randint(1, 20) == 1:
+    await m.channel.send("💖 you're doing amazing, keep chatting ✨")    
     conn.commit()
-
-    # 🔢 COUNTING
-    if not m.content.startswith("!") and m.channel.id == COUNT_CH:
-        if m.author == last:
-            return await m.delete()
-        try:
-            n = int(m.content)
-        except:
-            return await m.delete()
-
-        if n != count + 1:
-            count = 0
-            return await m.channel.send("💔 reset")
-
-        count = n
-        last = m.author
-
-    # 💎 XP SYSTEM
+    
+    # 💎 XP
     if not m.content.startswith("!"):
-        gain = random.randint(5, 10)
-
-        cur.execute("SELECT * FROM vip_users WHERE user_id=%s", (uid,))
-        if cur.fetchone():
-            gain *= 2
-
-        cur.execute(
-            "UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",
-            (gain, uid)
-        )
-        xp = cur.fetchone()[0]
-
-        level = xp // 50
-        cur.execute(
-            "UPDATE users SET level=%s WHERE user_id=%s",
-            (level, uid)
-        )
+        gain=random.randint(5,10)
+        cur.execute("UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",(gain,uid))
+        xp=cur.fetchone()[0]
+        level=xp//50
+        cur.execute("UPDATE users SET level=%s WHERE user_id=%s",(level,uid))
+        cur.execute("SELECT * FROM vip_users WHERE user_id=%s",(uid,))
+    if cur.fetchone():
+        gain *= 2
         conn.commit()
-
-        # 🎀 LEVEL ROLES
-        if level in LEVEL_ROLES:
-            role = discord.utils.get(m.guild.roles, name=LEVEL_ROLES[level])
-            if role and role not in m.author.roles:
-                await m.author.add_roles(role)
-
-        # 💖 REP
-        cur.execute("UPDATE users SET rep=rep+1 WHERE user_id=%s", (uid,))
-        conn.commit()
-
-        # 🤖 PERSONALITY RESPONSES
-        content = m.content.lower()
-
-        if "sad" in content:
-            if mode == "soft":
-                await m.channel.send(f"🧸 {name} I’m here for you 💖")
-            elif mode == "sassy":
-                await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
-            elif mode == "sweet":
-                await m.channel.send("💖 sending you hugs and love ✨")
-            elif mode == "strict":
-                await m.channel.send("⚖️ focus. you got this.")
-
-        if "lonely" in content:
-            if mode == "soft":
-                await m.channel.send("💖 you’re not alone here")
-            elif mode == "sassy":
-                await m.channel.send("pls you have us, don’t be dramatic 💅")
-
-    # ⚖️ SOFT MOD
-    if m.content.isupper() and len(m.content) > 15:
-        await m.delete()
-        await m.channel.send("💖 keep it cute")
-
-    # ✅ MUST BE LAST
+     
     await bot.process_commands(m)
 
-# 🏆 COMMANDS
-@bot.command()
-async def rulespanel(ctx):
-    await ctx.send(
-        embed=doll_embed(
-            "💖 DOLLHOUSE RULES",
-            """
-🔞 **this is an 18+ server only**  
-by staying, you confirm you are 18 or older  
-
-━━━━━━━━━━━━━━━━━━━  
-
-💖 **1. be kind, always**  
-treat every doll with respect — no bullying or harassment  
-
-💖 **2. no hate or discrimination**  
-this is a safe and inclusive space for everyone  
-
-💖 **3. keep it cute**  
-light profanity is okay, but don’t use it to attack others  
-
-💖 **4. no spam or unwanted promo**  
-only promote in the correct channels  
-
-💖 **5. nsfw stays in nsfw channels**  
-must be verified to access  
-
-💖 **6. listen to staff**  
-our dollhouse team keeps everything safe and smooth  
-
-━━━━━━━━━━━━━━━━━━━  
-
-💖 click below to agree & enter ✨
-"""
-        ),
-        view=RulesVerifyView()
-    )
-@bot.command()
-async def currentpersonality(ctx):
-    cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
-    row = cur.fetchone()
-    mode = row[0] if row else "soft"
-
-    await ctx.send(f"💖 current personality: **{mode}**")
+# 💎 COMMANDS
 @bot.command()
 async def profile(ctx):
-    cur.execute("SELECT xp,level,rep FROM users WHERE user_id=%s",(str(ctx.author.id),))
-    d=cur.fetchone()
+    cur.execute("SELECT xp,level,rep,coins FROM users WHERE user_id=%s",(str(ctx.author.id),))
+    d = cur.fetchone()
+
     if not d:
         return await ctx.send("no data")
-    await ctx.send(embed=doll_embed("💖 Profile",f"Level {d[1]}\nXP {d[0]}\nRep {d[2]}"))
+
+    await ctx.send(embed=doll_embed(
+        "💖 Doll Profile",
+        f"""
+✨ Level: {d[1]}
+💎 XP: {d[0]}
+💖 Rep: {d[2]}
+💰 Coins: {d[3]}
+"""
+    ))
+@bot.command()
+async def daily(ctx):
+    uid = str(ctx.author.id)
+    now = datetime.datetime.utcnow()
+
+    cur.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s",(uid,))
+    d = cur.fetchone()
+
+    if d and d[0] and (now - d[0]).total_seconds() < 86400:
+        return await ctx.send("💖 come back later")
+
+    reward = random.randint(50, 100)
+
+    cur.execute("""
+    INSERT INTO daily_rewards (user_id,last_claim)
+    VALUES (%s,%s)
+    ON CONFLICT (user_id)
+    DO UPDATE SET last_claim=%s
+    """,(uid,now,now))
+
+    cur.execute("UPDATE users SET xp=xp+%s, coins=coins+%s WHERE user_id=%s",(reward,reward//2,uid))
+    conn.commit()
+
+    await ctx.send(f"🎁 +{reward} XP & 💰 {reward//2} coins 💖")
+@bot.command()
+async def buy(ctx, item: str):
+    uid = str(ctx.author.id)
+
+    cur.execute("SELECT coins FROM users WHERE user_id=%s", (uid,))
+    data = cur.fetchone()
+
+    if not data:
+        return await ctx.send("💖 no data")
+
+    coins = data[0]
+
+    if item == "vip" and coins >= 200:
+        role = discord.utils.get(ctx.guild.roles, name="👑 VIP Doll")
+        await ctx.author.add_roles(role)
+
+        cur.execute("UPDATE users SET coins=coins-200 WHERE user_id=%s", (uid,))
+        conn.commit()
+
+        await ctx.send("👑 VIP unlocked 💎")
+
+    else:
+        await ctx.send("💔 not enough coins")
+@bot.command()
+async def shop(ctx):
+    await ctx.send(embed=doll_embed(
+        "🛍️ Dollhouse Shop",
+        """
+💎 100 coins — 🎀 Custom Role  
+💎 200 coins — 💖 VIP (24h)  
+💎 50 coins — 🌟 Featured Doll  
+"""
+    ))
+@bot.command()
+async def rolespanel(ctx):
+    await ctx.send(embed=doll_embed("Roles","💖"),view=AgeView())
+
+@bot.command()
+async def ticketpanel(ctx):
+    await ctx.send(embed=doll_embed("Support","💌"),view=Ticket())
+
+@bot.command()
+async def warn(ctx,member:discord.Member):
+    cur.execute("INSERT INTO warnings (user_id,count) VALUES (%s,1)",(str(member.id),))
+    conn.commit()
+    await ctx.send(f"{member.mention} warned")
 
 @bot.command()
 async def leaderboard(ctx):
@@ -376,81 +293,18 @@ async def leaderboard(ctx):
     for i,(uid,xp) in enumerate(rows,1):
         m=ctx.guild.get_member(int(uid))
         if m: txt+=f"{i}. {m.display_name} — {xp}\n"
-    await ctx.send(embed=doll_embed("💎 Top Dolls",txt))
+    await ctx.send(embed=doll_embed("Leaderboard",txt))
 
 @bot.command()
 async def daily(ctx):
-    conn2=psycopg2.connect(DATABASE_URL)
-    cur2=conn2.cursor()
-
-    uid=str(ctx.author.id)
-    now=datetime.datetime.utcnow()
-
-    cur2.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s",(uid,))
-    d=cur2.fetchone()
-
-    if d and d[0] and (now-d[0]).total_seconds()<86400:
-        return await ctx.send("💖 come back later")
-
-    cur2.execute("INSERT INTO daily_rewards (user_id,last_claim) VALUES (%s,%s) ON CONFLICT (user_id) DO UPDATE SET last_claim=%s",(uid,now,now))
-    cur2.execute("UPDATE users SET xp=xp+50 WHERE user_id=%s",(uid,))
-    conn2.commit()
-
-    await ctx.send("🎁 +50 XP 💖")
-@bot.command()
-async def doll(ctx):
-    affirmations = [
-        "💖 you are THAT doll. don’t forget it.",
-        "✨ pretty, powerful, and unstoppable.",
-        "💅 soft doesn’t mean weak.",
-        "🎀 you deserve everything you dream of.",
-        "💎 you’re the main character, always."
-    ]
-
-    await ctx.send(embed=doll_embed(
-        "💖 Doll Affirmation",
-        random.choice(affirmations)
-    ))
-@bot.command()
-async def selfcare(ctx):
-    tips = [
-        "🛁 take a warm shower & reset your energy",
-        "📵 log off for a bit — protect your peace",
-        "💤 rest is productive too",
-        "🕯️ light a candle & breathe",
-        "🎧 listen to music and just exist"
-    ]
-
-    await ctx.send(embed=doll_embed(
-        "🧸 Self Care Reminder",
-        random.choice(tips)
-    ))    
-# 👩‍💻 STAFF PANEL
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def staffpanel(ctx):
-    await ctx.send(embed=doll_embed("👩‍💻 Staff Panel","!clear !ban !mute"))
-
-# 🧹 CLEAR
-@bot.command()
-@commands.has_permissions(manage_messages=True)
-async def clear(ctx,amount:int):
-    await ctx.channel.purge(limit=amount)
-
-# 💎 VIP
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def addvip(ctx,user:discord.Member):
-    cur.execute("INSERT INTO vip_users (user_id) VALUES (%s) ON CONFLICT DO NOTHING",(str(user.id),))
-    conn.commit()
-    await ctx.send(f"{user.mention} VIP 💎")
+    await ctx.send("🎁 +50 XP")
 
 # 📢 AUTO
 @tasks.loop(hours=1)
 async def auto():
     if bot.guilds:
         ch=bot.guilds[0].get_channel(WELCOME)
-        if datetime.datetime.now().hour==10 and ch:
+        if ch and datetime.datetime.now().hour==10:
             await ch.send("🌸 good morning dolls 💖")
 
 # 🎮 EVENTS
@@ -463,24 +317,17 @@ async def weekly():
 
     if now.weekday()==5 and now.hour==19:
         await g.get_channel(EVENT).send("🎮 game night 💖")
-    if now.weekday()==6 and now.hour==18:
-        await g.get_channel(EVENT).send("☕ tea time 💖")
-@tasks.loop(minutes=5)
-async def check_unverified():
-    for guild in bot.guilds:
-        role = discord.utils.get(guild.roles, name="Unverified Doll")
-        if not role:
-            continue
+@tasks.loop(hours=24)
+async def doll_of_day():
+    if not bot.guilds:
+        return
 
-        for member in guild.members:
-            if role in member.roles:
-                joined = member.joined_at
-                if joined:
-                    diff = (datetime.datetime.utcnow() - joined.replace(tzinfo=None)).total_seconds()
-                    
-                    if diff > 900:  # ⏱️ 15 minutes
-                        try:
-                            await member.kick(reason="Not verified in time")
-                        except:
-                            pass
+    g = bot.guilds[0]
+    ch = g.get_channel(WELCOME)
+
+    members = [m for m in g.members if not m.bot]
+
+    if members and ch:
+        user = random.choice(members)
+        await ch.send(f"🌟 Doll of the Day: {user.mention} 💖")
 bot.run(TOKEN)
