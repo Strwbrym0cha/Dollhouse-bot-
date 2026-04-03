@@ -200,9 +200,9 @@ async def on_message(m):
 
 if "sad" in content:
             if mode == "soft":
-                await m.channel.send(f"🧸 {name} I’m here for you 💖")
+             await m.channel.send(f"🧸 {name} I’m here for you 💖")
             elif mode == "sassy":
-                await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
+             await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
             elif mode == "sweet":
                 await m.channel.send("💖 sending you hugs and love ✨")
             elif mode == "strict":
