@@ -469,15 +469,15 @@ async def check_unverified():
             if role in member.roles:
                 joined = member.joined_at
 
-if joined:
-    now = datetime.datetime.now(datetime.UTC)
-    diff = (now - joined).total_seconds()
+                if joined:
+                    now = datetime.datetime.now(datetime.UTC)
+                    diff = (now - joined).total_seconds()
 
-    if diff > 900:
-        try:
-            await member.kick(reason="Not verified in time")
-        except:
-            pass
+                    if diff > 900:  # ⏱️ 15 minutes
+                        try:
+                            await member.kick(reason="Not verified in time")
+                        except:
+                            pass
 # 🎮 EVENTS
 @tasks.loop(minutes=1)
 async def weekly():
