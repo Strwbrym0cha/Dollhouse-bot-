@@ -179,7 +179,7 @@ async def on_message(m):
     (m.author.display_name, uid))
     (coins, uid) 
     if random.randint(1, 20) == 1:
-    await m.channel.send("💖 you're doing amazing, keep chatting ✨")    
+      await m.channel.send("💖 you're doing amazing, keep chatting ✨")    
     conn.commit()
     
     # 💎 XP
@@ -196,9 +196,9 @@ async def on_message(m):
      
     await bot.process_commands(m)
      # 🤖 PERSONALITY RESPONSES
-        content = m.content.lower()
+  content = m.content.lower()
 
-        if "sad" in content:
+if "sad" in content:
             if mode == "soft":
                 await m.channel.send(f"🧸 {name} I’m here for you 💖")
             elif mode == "sassy":
@@ -208,7 +208,7 @@ async def on_message(m):
             elif mode == "strict":
                 await m.channel.send("⚖️ focus. you got this.")
 
-        if "lonely" in content:
+if "lonely" in content:
             if mode == "soft":
                 await m.channel.send("💖 you’re not alone here")
             elif mode == "sassy":
