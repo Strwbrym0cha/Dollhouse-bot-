@@ -78,8 +78,11 @@ class VerifyView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Enter Dollhouse 💖", style=discord.ButtonStyle.success)
-    async def verify(self, interaction, button):
+   @discord.ui.button(
+    label="Enter Dollhouse 💖",
+    style=discord.ButtonStyle.success,
+    custom_id="verify_button"
+)
         g=interaction.guild
         u=interaction.user
 
@@ -94,20 +97,29 @@ class VerifyView(View):
 # 🎀 ROLE SELECT
 class RoleSelect(Select):
     def __init__(self, placeholder, roles, emojis):
-        options=[discord.SelectOption(label=r,emoji=e) for r,e in zip(roles,emojis)]
-        super().__init__(placeholder=placeholder, options=options)
-        self.role_names=roles
+        options = [
+            discord.SelectOption(label=r, emoji=e)
+            for r, e in zip(roles, emojis)
+        ]
+
+        super().__init__(
+            placeholder=placeholder,
+            options=options,
+            custom_id=placeholder  # 💖 REQUIRED
+        )
+
+        self.role_names = roles
 
     async def callback(self, interaction):
         for role in interaction.guild.roles:
             if role.name in self.role_names:
                 await interaction.user.remove_roles(role)
 
-        role=discord.utils.get(interaction.guild.roles,name=self.values[0])
+        role = discord.utils.get(interaction.guild.roles, name=self.values[0])
         if role:
             await interaction.user.add_roles(role)
 
-        await interaction.response.send_message("💖 updated!",ephemeral=True)
+        await interaction.response.send_message("💖 updated!", ephemeral=True)
 
 # 🎀 ROLE VIEWS
 class AgeView(View):
@@ -124,7 +136,7 @@ class EventView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎮 Game Night")
+   @discord.ui.button(label="🎮 Game Night", custom_id="game_ping")
     async def game(self,i,b):
         role=discord.utils.get(i.guild.roles,name="🎮 Game Night Ping")
         if role: await i.user.add_roles(role)
