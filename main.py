@@ -196,7 +196,7 @@ async def on_message(m):
      
     await bot.process_commands(m)
      # 🤖 PERSONALITY RESPONSES
-  content = m.content.lower()
+    content = m.content.lower()
 
 if "sad" in content:
             if mode == "soft":
