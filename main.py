@@ -149,24 +149,27 @@ class Ticket(View):
 async def on_ready():
     print("online 💖")
 
-    bot.add_view(VerifyView())
-    bot.add_view(AgeView())
-    bot.add_view(GenderView())
-    bot.add_view(EventView())
-    bot.add_view(Ticket())
+    try:
+        bot.add_view(VerifyView())
+        bot.add_view(AgeView())
+        bot.add_view(GenderView())
+        bot.add_view(EventView())
+        bot.add_view(Ticket())
 
-    # 💎 SAFE TASK START
-    if not doll_of_day.is_running():
-        doll_of_day.start()
+        if not doll_of_day.is_running():
+            doll_of_day.start()
 
-    if not auto.is_running():
-        auto.start()
+        if not auto.is_running():
+            auto.start()
 
-    if not weekly.is_running():
-        weekly.start()
+        if not weekly.is_running():
+            weekly.start()
 
-    if not check_unverified.is_running():
-        check_unverified.start()
+        if not check_unverified.is_running():
+            check_unverified.start()
+
+    except Exception as e:
+        print("ERROR IN ON_READY:", e)
 # 💬 MESSAGE SYSTEM
 # 💖 FIXED CRITICAL SECTION (REPLACE YOUR on_message)
 
