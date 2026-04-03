@@ -145,6 +145,13 @@ class EventView(View):
     )
     async def game(self, interaction: discord.Interaction, button: discord.ui.Button):
         role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
+
+        if role:
+            await interaction.user.add_roles(role)
+
+        await interaction.response.send_message("🎮 added!", ephemeral=True)
+    async def game(self, interaction: discord.Interaction, button: discord.ui.Button):
+        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
         if role:
             await interaction.user.add_roles(role)
 
