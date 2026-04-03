@@ -78,22 +78,24 @@ class VerifyView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-   @discord.ui.button(
-    label="Enter Dollhouse 💖",
-    style=discord.ButtonStyle.success,
-    custom_id="verify_button"
-)
-        g=interaction.guild
-        u=interaction.user
+    @discord.ui.button(
+        label="Enter Dollhouse 💖",
+        style=discord.ButtonStyle.success,
+        custom_id="verify_button"
+    )
+    async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
+        g = interaction.guild
+        u = interaction.user
 
-        v=discord.utils.get(g.roles,name="Verified Doll")
-        uv=discord.utils.get(g.roles,name="Unverified Doll")
+        v = discord.utils.get(g.roles, name="Verified Doll")
+        uv = discord.utils.get(g.roles, name="Unverified Doll")
 
-        if v: await u.add_roles(v)
-        if uv and uv in u.roles: await u.remove_roles(uv)
+        if v:
+            await u.add_roles(v)
+        if uv and uv in u.roles:
+            await u.remove_roles(uv)
 
-        await interaction.response.send_message("💖 welcome inside ✨",ephemeral=True)
-
+        await interaction.response.send_message("💖 welcome inside ✨", ephemeral=True)
 # 🎀 ROLE SELECT
 class RoleSelect(Select):
     def __init__(self, placeholder, roles, emojis):
@@ -136,6 +138,17 @@ class EventView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    @discord.ui.button(
+        label="🎮 Game Night",
+        style=discord.ButtonStyle.primary,
+        custom_id="game_ping"
+    )
+    async def game(self, interaction: discord.Interaction, button: discord.ui.Button):
+        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
+        if role:
+            await interaction.user.add_roles(role)
+
+        await interaction.response.send_message("🎮 added!", ephemeral=True)
    @discord.ui.button(label="🎮 Game Night", custom_id="game_ping")
     async def game(self,i,b):
         role=discord.utils.get(i.guild.roles,name="🎮 Game Night Ping")
@@ -144,18 +157,30 @@ class EventView(View):
 
 # 🎟️ TICKET
 class Ticket(View):
-    @discord.ui.button(label="Open Ticket 💌",style=discord.ButtonStyle.success)
-    async def open(self,i,b):
-        g=i.guild
-        cat=discord.utils.get(g.categories,name="tickets") or await g.create_category("tickets")
-        ch=await g.create_text_channel(f"ticket-{i.user.name}",category=cat)
-        await ch.set_permissions(i.user,read_messages=True,send_messages=True)
+    def __init__(self):
+        super().__init__(timeout=None)
 
-        cur.execute("INSERT INTO tickets (user_id,channel_id) VALUES (%s,%s)",(str(i.user.id),str(ch.id)))
+    @discord.ui.button(
+        label="Open Ticket 💌",
+        style=discord.ButtonStyle.success,
+        custom_id="ticket_open"
+    )
+    async def open(self, interaction: discord.Interaction, button: discord.ui.Button):
+        g = interaction.guild
+
+        cat = discord.utils.get(g.categories, name="tickets") or await g.create_category("tickets")
+
+        ch = await g.create_text_channel(f"ticket-{interaction.user.name}", category=cat)
+
+        await ch.set_permissions(interaction.user, read_messages=True, send_messages=True)
+
+        cur.execute(
+            "INSERT INTO tickets (user_id,channel_id) VALUES (%s,%s)",
+            (str(interaction.user.id), str(ch.id))
+        )
         conn.commit()
 
-        await ch.send(f"{i.user.mention} support will help 💖")
-
+        await ch.send(f"{interaction.user.mention} support will help 💖")
 # 💖 READY
 @bot.event
 async def on_ready():
@@ -417,7 +442,7 @@ async def personality(ctx, mode: str):
     mode = mode.lower()
 
     if mode not in ["soft", "sassy", "sweet", "strict"]:
-        return await ctx.send("💖 modes: soft, sassy, sweet, strict")
+        await ctx.send(f"💖 personality set to {mode}")
 
     cur.execute(
         "INSERT INTO personalities (guild_id, mode) VALUES (%s,%s) ON CONFLICT (guild_id) DO UPDATE SET mode=%s",
@@ -459,7 +484,9 @@ async def weekly():
     g=bot.guilds[0]
 
     if now.weekday()==5 and now.hour==19:
-        await g.get_channel(EVENT).send("🎮 game night 💖")
+        ch = g.get_channel(EVENT)
+if ch:
+    await ch.send("🎮 game night 💖")
 @tasks.loop(hours=24)
 async def doll_of_day():
     if not bot.guilds:
