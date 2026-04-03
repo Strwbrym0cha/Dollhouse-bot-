@@ -169,7 +169,7 @@ class EventView(View):
             await interaction.user.add_roles(role)
 
         await interaction.response.send_message("🎮 added!", ephemeral=True)
-   @discord.ui.button(label="🎮 Game Night", custom_id="game_ping")
+  @discord.ui.button(label="🎮 Game Night", custom_id="game_ping")
     async def game(self,i,b):
         role=discord.utils.get(i.guild.roles,name="🎮 Game Night Ping")
         if role: await i.user.add_roles(role)
