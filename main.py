@@ -485,7 +485,7 @@ async def weekly():
 
     if now.weekday()==5 and now.hour==19:
         ch = g.get_channel(EVENT)
-if ch:
+    if ch:
     await ch.send("🎮 game night 💖")
 @tasks.loop(hours=24)
 async def doll_of_day():
