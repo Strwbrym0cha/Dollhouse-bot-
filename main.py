@@ -195,8 +195,38 @@ async def on_message(m):
         conn.commit()
      
     await bot.process_commands(m)
+     # 🤖 PERSONALITY RESPONSES
+        content = m.content.lower()
+
+        if "sad" in content:
+            if mode == "soft":
+                await m.channel.send(f"🧸 {name} I’m here for you 💖")
+            elif mode == "sassy":
+                await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
+            elif mode == "sweet":
+                await m.channel.send("💖 sending you hugs and love ✨")
+            elif mode == "strict":
+                await m.channel.send("⚖️ focus. you got this.")
+
+        if "lonely" in content:
+            if mode == "soft":
+                await m.channel.send("💖 you’re not alone here")
+            elif mode == "sassy":
+                await m.channel.send("pls you have us, don’t be dramatic 💅")
 
 # 💎 COMMANDS
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def staffpanel(ctx):
+    await ctx.send(embed=doll_embed("👩‍💻 Staff Panel","!clear !ban !mute"))
+
+@bot.command()
+async def currentpersonality(ctx):
+    cur.execute("SELECT mode FROM personalities WHERE guild_id=%s",(str(ctx.guild.id),))
+    row = cur.fetchone()
+    mode = row[0] if row else "soft"
+
+    await ctx.send(f"💖 current personality: **{mode}**")
 @bot.command()
 async def profile(ctx):
     cur.execute("SELECT xp,level,rep,coins FROM users WHERE user_id=%s",(str(ctx.author.id),))
@@ -294,10 +324,40 @@ async def leaderboard(ctx):
         m=ctx.guild.get_member(int(uid))
         if m: txt+=f"{i}. {m.display_name} — {xp}\n"
     await ctx.send(embed=doll_embed("Leaderboard",txt))
-
+# 💎 VIP
 @bot.command()
-async def daily(ctx):
-    await ctx.send("🎁 +50 XP")
+@commands.has_permissions(administrator=True)
+async def addvip(ctx, member: discord.Member):
+    premium.add(member.id)
+    await ctx.send(f"{member.mention} is VIP 💎")
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def personality(ctx, mode: str):
+    mode = mode.lower()
+
+    if mode not in ["soft", "sassy", "sweet", "strict"]:
+        return await ctx.send("💖 modes: soft, sassy, sweet, strict")
+
+    cur.execute(
+        "INSERT INTO personalities (guild_id, mode) VALUES (%s,%s) ON CONFLICT (guild_id) DO UPDATE SET mode=%s",
+        (str(ctx.guild.id), mode, mode)
+    )
+    conn.commit()
+ # 🔢 COUNTING
+    if not m.content.startswith("!") and m.channel.id == COUNT_CH:
+        if m.author == last:
+            return await m.delete()
+        try:
+            n = int(m.content)
+        except:
+            return await m.delete()
+
+        if n != count + 1:
+            count = 0
+            return await m.channel.send("💔 reset")
+
+        count = n
+        last = m.author
 
 # 📢 AUTO
 @tasks.loop(hours=1)
@@ -306,7 +366,24 @@ async def auto():
         ch=bot.guilds[0].get_channel(WELCOME)
         if ch and datetime.datetime.now().hour==10:
             await ch.send("🌸 good morning dolls 💖")
+@tasks.loop(minutes=5)
+async def check_unverified():
+    for guild in bot.guilds:
+        role = discord.utils.get(guild.roles, name="Unverified Doll")
+        if not role:
+            continue
 
+        for member in guild.members:
+            if role in member.roles:
+                joined = member.joined_at
+                if joined:
+                    diff = (datetime.datetime.utcnow() - joined.replace(tzinfo=None)).total_seconds()
+                    
+                    if diff > 900:  # ⏱️ 15 minutes
+                        try:
+                            await member.kick(reason="Not verified in time")
+                        except:
+                            pass
 # 🎮 EVENTS
 @tasks.loop(minutes=1)
 async def weekly():
