@@ -156,25 +156,6 @@ class EventView(View):
             "🎮 you got the game night role 💖",
             ephemeral=True
         )
-    async def game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
-
-        if role:
-            await interaction.user.add_roles(role)
-
-        await interaction.response.send_message("🎮 added!", ephemeral=True)
-    async def game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        role = discord.utils.get(interaction.guild.roles, name="🎮 Game Night Ping")
-        if role:
-            await interaction.user.add_roles(role)
-
-        await interaction.response.send_message("🎮 added!", ephemeral=True)
-  @discord.ui.button(label="🎮 Game Night", custom_id="game_ping")
-    async def game(self,i,b):
-        role=discord.utils.get(i.guild.roles,name="🎮 Game Night Ping")
-        if role: await i.user.add_roles(role)
-        await i.response.send_message("🎮 added!",ephemeral=True)
-
 # 🎟️ TICKET
 class Ticket(View):
     def __init__(self):
