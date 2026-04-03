@@ -155,10 +155,18 @@ async def on_ready():
     bot.add_view(EventView())
     bot.add_view(Ticket())
 
-    doll_of_day.start()
-    auto.start()
-    weekly.start()
-    check_unverified.start()  # 💖 ADD THIS
+    # 💎 SAFE TASK START
+    if not doll_of_day.is_running():
+        doll_of_day.start()
+
+    if not auto.is_running():
+        auto.start()
+
+    if not weekly.is_running():
+        weekly.start()
+
+    if not check_unverified.is_running():
+        check_unverified.start()
 # 💬 MESSAGE SYSTEM
 # 💖 FIXED CRITICAL SECTION (REPLACE YOUR on_message)
 
