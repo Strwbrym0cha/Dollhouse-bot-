@@ -159,61 +159,111 @@ async def on_ready():
     weekly.start()
 
 # 💬 MESSAGE SYSTEM
+# 💖 FIXED CRITICAL SECTION (REPLACE YOUR on_message)
+
 @bot.event
 async def on_message(m):
-    global count,last
+    global count, last
 
     if m.author.bot:
         return
 
-    uid=str(m.author.id)
+    uid = str(m.author.id)
+    name = m.author.display_name
 
-    cur.execute("SELECT * FROM users WHERE user_id=%s",(uid,))
+    # 🧠 CREATE USER
+    cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
     if not cur.fetchone():
-        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)",(uid,m.author.name))
+        cur.execute("INSERT INTO users (user_id,name) VALUES (%s,%s)", (uid, name))
+        conn.commit()
+
+    # 💰 COINS (FIXED)
     coins = random.randint(1, 5)
     cur.execute(
-    "UPDATE users SET coins=coins+%s WHERE user_id=%s",)
+        "UPDATE users SET coins=coins+%s WHERE user_id=%s",
+        (coins, uid)
+    )
+
+    # 🧠 MEMORY UPDATE
     cur.execute(
-    "UPDATE users SET name=%s WHERE user_id=%s",
-    (m.author.display_name, uid))
-    (coins, uid) 
-    if random.randint(1, 20) == 1:
-      await m.channel.send("💖 you're doing amazing, keep chatting ✨")    
+        "UPDATE users SET name=%s WHERE user_id=%s",
+        (name, uid)
+    )
+
     conn.commit()
-    
-    # 💎 XP
+
+    # 💎 XP SYSTEM
     if not m.content.startswith("!"):
-        gain=random.randint(5,10)
-        cur.execute("UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",(gain,uid))
-        xp=cur.fetchone()[0]
-        level=xp//50
-        cur.execute("UPDATE users SET level=%s WHERE user_id=%s",(level,uid))
-        cur.execute("SELECT * FROM vip_users WHERE user_id=%s",(uid,))
-    if cur.fetchone():
-        gain *= 2
+        gain = random.randint(5, 10)
+
+        # 👑 VIP BOOST
+        cur.execute("SELECT * FROM vip_users WHERE user_id=%s", (uid,))
+        if cur.fetchone():
+            gain *= 2
+
+        cur.execute(
+            "UPDATE users SET xp=xp+%s WHERE user_id=%s RETURNING xp",
+            (gain, uid)
+        )
+        xp = cur.fetchone()[0]
+
+        level = xp // 50
+
+        cur.execute(
+            "UPDATE users SET level=%s WHERE user_id=%s",
+            (level, uid)
+        )
         conn.commit()
-     
-    await bot.process_commands(m)
-     # 🤖 PERSONALITY RESPONSES
+
+        # 🎀 LEVEL ROLES
+        if level in LEVEL_ROLES:
+            role = discord.utils.get(m.guild.roles, name=LEVEL_ROLES[level])
+            if role and role not in m.author.roles:
+                await m.author.add_roles(role)
+
+                ch = m.guild.get_channel(LEVEL_CH)
+                if ch:
+                    await ch.send(
+                        f"💖 {m.author.mention} reached {LEVEL_ROLES[level]} ✨"
+                    )
+
+    # 🔢 COUNTING SYSTEM (FIXED POSITION)
+    if m.channel.id == COUNT_CH and not m.content.startswith("!"):
+        if m.author == last:
+            return await m.delete()
+
+        try:
+            n = int(m.content)
+        except:
+            return await m.delete()
+
+        if n != count + 1:
+            count = 0
+            return await m.channel.send("💔 reset")
+
+        count = n
+        last = m.author
+
+        if count == 50:
+            role = discord.utils.get(m.guild.roles, name="🌟 Featured Doll")
+            if role:
+                await m.author.add_roles(role)
+                await m.channel.send("🌟 milestone reached 💖")
+
+    # 🤖 PERSONALITY (FIXED)
     content = m.content.lower()
 
-if "sad" in content:
-            if mode == "soft":
-             await m.channel.send(f"🧸 {name} I’m here for you 💖")
-            elif mode == "sassy":
-             await m.channel.send("💅 stand up doll, you’re too pretty to be sad")
-            elif mode == "sweet":
-                await m.channel.send("💖 sending you hugs and love ✨")
-            elif mode == "strict":
-                await m.channel.send("⚖️ focus. you got this.")
+    if "sad" in content:
+        await m.channel.send(f"🧸 {name} I’m here for you 💖")
 
-if "lonely" in content:
-            if mode == "soft":
-                await m.channel.send("💖 you’re not alone here")
-            elif mode == "sassy":
-                await m.channel.send("pls you have us, don’t be dramatic 💅")
+    if "lonely" in content:
+        await m.channel.send("💖 you’re not alone here")
 
+    # 💖 RANDOM BOOST MESSAGE
+    if random.randint(1, 20) == 1:
+        await m.channel.send("💖 you're doing amazing ✨")
+
+    await bot.process_commands(m)
 # 💎 COMMANDS
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -328,7 +378,11 @@ async def leaderboard(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def addvip(ctx, member: discord.Member):
-    premium.add(member.id)
+    cur.execute(
+    "INSERT INTO vip_users (user_id) VALUES (%s) ON CONFLICT DO NOTHING",
+    (str(member.id),)
+)
+conn.commit()
     await ctx.send(f"{member.mention} is VIP 💎")
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -343,22 +397,7 @@ async def personality(ctx, mode: str):
         (str(ctx.guild.id), mode, mode)
     )
     conn.commit()
- # 🔢 COUNTING
-    if not m.content.startswith("!") and m.channel.id == COUNT_CH:
-        if m.author == last:
-            return await m.delete()
-        try:
-            n = int(m.content)
-        except:
-            return await m.delete()
-
-        if n != count + 1:
-            count = 0
-            return await m.channel.send("💔 reset")
-
-        count = n
-        last = m.author
-
+ 
 # 📢 AUTO
 @tasks.loop(hours=1)
 async def auto():
