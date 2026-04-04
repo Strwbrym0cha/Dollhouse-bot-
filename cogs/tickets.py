@@ -51,7 +51,7 @@ class CloseView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.danger)
     async def close(self, interaction: discord.Interaction, button: Button):
         await interaction.channel.delete()
 
@@ -62,15 +62,15 @@ class Tickets(commands.Cog):
         bot.add_view(TicketView())
         bot.add_view(CloseView())
 
-   @commands.command()
-@commands.has_permissions(administrator=True)
-async def ticketpanel(self, ctx):
-    embed = discord.Embed(
-        title="🎟️ Dollhouse Support",
-        description="Click below to open a ticket 💖",
-        color=discord.Color.blurple()
-    )
-    await ctx.send(embed=embed, view=TicketView())
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def ticketpanel(self, ctx):
+        embed = discord.Embed(
+            title="🎟️ Dollhouse Support",
+            description="Click below to open a ticket 💖",
+            color=discord.Color.blurple()
+        )
+        await ctx.send(embed=embed, view=TicketView())
 
 
 async def setup(bot):
