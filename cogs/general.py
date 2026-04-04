@@ -129,13 +129,16 @@ class General(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def rolespanel(self, ctx):
-        await ctx.send("🎂 Age", view=AgeView())
-        await ctx.send("💅 Gender", view=GenderView())
-        await ctx.send("🌍 Location", view=LocationView())
-        await ctx.send("🏳️ Pronouns", view=PronounView())
-        await ctx.send("💖 Sexuality", view=SexualityView())
-        await ctx.send("🎮 Events", view=EventView())
+    await ctx.channel.purge(limit=10)
+
+    await ctx.send("🎂 Age", view=AgeView())
+    await ctx.send("💅 Gender", view=GenderView())
+    await ctx.send("🌍 Location", view=LocationView())
+    await ctx.send("🏳️ Pronouns", view=PronounView())
+    await ctx.send("💖 Sexuality", view=SexualityView())
+    await ctx.send("🎮 Events", view=EventView())
 
 
 async def setup(bot):
