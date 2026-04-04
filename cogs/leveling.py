@@ -26,5 +26,5 @@ class Leveling(commands.Cog):
         await self.bot.process_commands(message)
 
 
-def setup(bot):
-    bot.add_cog(Leveling(bot))
+async def setup(bot):
+    await bot.add_cog(YourCog(bot))
