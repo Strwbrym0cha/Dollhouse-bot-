@@ -18,6 +18,9 @@ async def on_ready():
 # Load cogs
 for file in os.listdir("./cogs"):
     if file.endswith(".py"):
-        bot.load_extension(f"cogs.{file[:-3]}")
-
-bot.run(TOKEN)
+        try:
+            bot.load_extension(f"cogs.{file[:-3]}")
+            print(f"Loaded {file}")
+        except Exception as e:
+            print(f"Failed to load {file}: {e}")
+bot.run(os.getenv("TOKEN"))
