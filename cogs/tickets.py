@@ -2,74 +2,51 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Button
 
-CATEGORY_NAME = "🎟️ Tickets"
-STAFF_ROLE = "✨ Fairy Assistant"
+CATEGORY = "🎟️ Tickets"
+STAFF = "✨ Fairy Assistant"
 
-
-# 🎟️ OPEN TICKET VIEW
 class TicketView(View):
     def __init__(self):
-        super().__init__(timeout=None)  # required for persistence
+        super().__init__(timeout=None)
 
     @discord.ui.button(
         label="🎟️ Open Ticket",
         style=discord.ButtonStyle.primary,
-        custom_id="open_ticket_button"  # required for persistence
+        custom_id="open_ticket"
     )
-    async def open_ticket(self, interaction: discord.Interaction, button: Button):
-        guild = interaction.guild
-        user = interaction.user
+    async def open(self, interaction: discord.Interaction, button: Button):
+        g = interaction.guild
+        u = interaction.user
 
-        category = discord.utils.get(guild.categories, name=CATEGORY_NAME)
-        staff_role = discord.utils.get(guild.roles, name=STAFF_ROLE)
+        staff = discord.utils.get(g.roles, name=STAFF)
+        cat = discord.utils.get(g.categories, name=CATEGORY)
 
-        # create category if missing
-        if not category:
-            category = await guild.create_category(CATEGORY_NAME)
+        if not cat:
+            cat = await g.create_category(CATEGORY)
 
-        # prevent crash if role missing
-        if not staff_role:
-            await interaction.response.send_message(
-                "Staff role not found 💔", ephemeral=True
-            )
-            return
+        if not staff:
+            return await interaction.response.send_message("Staff role missing 💔", ephemeral=True)
 
-        # prevent duplicate tickets
-        existing = discord.utils.get(guild.text_channels, name=f"ticket-{user.name}")
-        if existing:
-            await interaction.response.send_message(
-                "💖 You already have a ticket!", ephemeral=True
-            )
-            return
+        if discord.utils.get(g.text_channels, name=f"ticket-{u.id}"):
+            return await interaction.response.send_message("You already have a ticket 💖", ephemeral=True)
 
-        # permissions
         overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            staff_role: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            g.default_role: discord.PermissionOverwrite(view_channel=False),
+            u: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+            staff: discord.PermissionOverwrite(view_channel=True, send_messages=True)
         }
 
-        # create channel
-        channel = await guild.create_text_channel(
-            name=f"ticket-{user.name}",
-            category=category,
+        ch = await g.create_text_channel(
+            name=f"ticket-{u.id}",
+            category=cat,
             overwrites=overwrites
         )
 
-        # send messages
-        await channel.send(f"{staff_role.mention} 💖 New ticket from {user.mention}")
-        await channel.send(
-            "🔒 Press below to close this ticket",
-            view=CloseView()
-        )
+        await ch.send(f"{staff.mention} 💖 assisting {u.mention}", view=CloseView())
 
-        await interaction.response.send_message(
-            f"🎀 Ticket created: {channel.mention}",
-            ephemeral=True
-        )
+        await interaction.response.send_message(f"🎀 {ch.mention} created", ephemeral=True)
 
 
-# 🔒 CLOSE TICKET VIEW
 class CloseView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -77,33 +54,27 @@ class CloseView(View):
     @discord.ui.button(
         label="Close Ticket",
         style=discord.ButtonStyle.danger,
-        custom_id="close_ticket_button"
+        custom_id="close_ticket"
     )
-    async def close_ticket(self, interaction: discord.Interaction, button: Button):
+    async def close(self, interaction: discord.Interaction, button: Button):
         await interaction.channel.delete()
 
 
-# 🎀 COG
 class Tickets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-        # persistent views (VERY IMPORTANT)
         bot.add_view(TicketView())
         bot.add_view(CloseView())
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
     async def ticketpanel(self, ctx):
         embed = discord.Embed(
-            title="🎟️ Dollhouse Support",
-            description="Click the button below to open a ticket 💖",
+            title="🎟️ Support",
+            description="Click to open a ticket 💖",
             color=discord.Color.blurple()
         )
-
         await ctx.send(embed=embed, view=TicketView())
 
 
-# 🔌 LOAD COG
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
