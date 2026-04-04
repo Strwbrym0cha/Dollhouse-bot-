@@ -9,25 +9,24 @@ class General(commands.Cog):
     async def help(self, ctx):
         embed = discord.Embed(
             title="💖 Dollhouse Commands",
-            description="Everything you need ✨",
-            color=discord.Color.purple()
+            color=discord.Color.blurple()
         )
 
         embed.add_field(
-            name="🎮 Fun",
-            value="!leaderboard\n!rep @user",
+            name="🎮 General",
+            value="!profile\n!leaderboard\n!daily",
+            inline=False
+        )
+
+        embed.add_field(
+            name="💰 Economy",
+            value="!shop\n!buy",
             inline=False
         )
 
         embed.add_field(
             name="🎟️ Support",
-            value="Use the ticket panel 💌",
-            inline=False
-        )
-
-        embed.add_field(
-            name="👑 Staff",
-            value="!ticketpanel\n!clear\n!kick\n!ban",
+            value="!ticketpanel",
             inline=False
         )
 
