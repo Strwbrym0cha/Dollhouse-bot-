@@ -18,4 +18,4 @@ class Moderation(commands.Cog):
         await member.ban(reason=reason)
 
 async def setup(bot):
-    await bot.add_cog(YourCog(bot))
+    await bot.add_cog(Moderation(bot))
