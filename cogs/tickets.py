@@ -9,7 +9,11 @@ class TicketView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎟️ Open Ticket", style=discord.ButtonStyle.primary)
+   @discord.ui.button(
+    label="🎟️ Open Ticket",
+    style=discord.ButtonStyle.primary,
+    custom_id="open_ticket"
+)
     async def open_ticket(self, interaction: discord.Interaction, button: Button):
         guild = interaction.guild
         user = interaction.user
@@ -51,7 +55,11 @@ class CloseView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.danger)
+    @discord.ui.button(
+    label="Close Ticket",
+    style=discord.ButtonStyle.danger,
+    custom_id="close_ticket"
+)
     async def close(self, interaction: discord.Interaction, button: Button):
         await interaction.channel.delete()
 
