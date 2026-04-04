@@ -68,7 +68,7 @@ class Tickets(commands.Cog):
         embed = discord.Embed(
             title="🎟️ Dollhouse Support",
             description="Click below to open a ticket 💖",
-            color=discord.Color.purple()
+            discord.ButtonStyle.blurple
         )
         await ctx.send(embed=embed, view=TicketView())
 
