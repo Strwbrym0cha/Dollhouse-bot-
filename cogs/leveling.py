@@ -16,3 +16,17 @@ class Leveling(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Leveling(bot))
+@commands.command()
+async def leaderboard(self, ctx):
+    database.cur.execute(
+        "SELECT user_id, xp FROM users ORDER BY xp DESC LIMIT 10"
+    )
+    results = database.cur.fetchall()
+
+    text = ""
+    for i, (user_id, xp) in enumerate(results, start=1):
+        user = ctx.guild.get_member(int(user_id))
+        name = user.name if user else "Unknown"
+        text += f"{i}. {name} — {xp} XP\n"
+
+    await ctx.send(f"🏆 Leaderboard:\n{text}")
