@@ -63,7 +63,6 @@ class Tickets(commands.Cog):
             title="🎟️ Dollhouse Support",
             description="Click to open a ticket 💖",
             color=discord.Color.purple()
-        )
         await ctx.send(embed=embed, view=TicketView())
 if not staff_role:
     await interaction.response.send_message("Staff role not found 💔", ephemeral=True)
