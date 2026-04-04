@@ -9,20 +9,27 @@ class Dashboard(commands.Cog):
     async def dashboard(self, ctx):
         embed = discord.Embed(
             title="📊 Dollhouse Dashboard",
-            color=discord.Color.purple()
+            color=discord.Color.blurple()
         )
 
         embed.add_field(
-            name="📈 Server Stats",
+            name="💎 Systems",
+            value="""
+🎟️ Tickets: ✅  
+💰 Economy: ✅  
+💎 Leveling: ✅  
+🛡️ Moderation: ✅  
+""",
+            inline=False
+        )
+
+        embed.add_field(
+            name="📈 Server",
             value=f"Members: {ctx.guild.member_count}",
             inline=False
         )
 
-        embed.add_field(
-            name="⚙️ Systems",
-            value="🎟️ Tickets ✅\n💎 Leveling ✅\n🛡️ Moderation ✅",
-            inline=False
-        )
+        embed.set_footer(text="Dollhouse Co 💖")
 
         await ctx.send(embed=embed)
 
