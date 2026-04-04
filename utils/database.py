@@ -65,5 +65,20 @@ def add_rep(user_id, amount):
         "UPDATE users SET rep = rep + ? WHERE user_id = ?",
         (amount, str(user_id))
     )
+def check_level_up(user_id):
+    xp = get_xp(user_id)
+    level = xp // 100  # simple formula
 
+    cur.execute("SELECT level FROM users WHERE user_id = ?", (str(user_id),))
+    current_level = cur.fetchone()[0]
+
+    if level > current_level:
+        cur.execute(
+            "UPDATE users SET level = ? WHERE user_id = ?",
+            (level, str(user_id))
+        )
+        conn.commit()
+        return level
+
+    return None
     conn.commit()
