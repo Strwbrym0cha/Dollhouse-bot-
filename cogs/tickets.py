@@ -69,4 +69,4 @@ if not staff_role:
     await interaction.response.send_message("Staff role not found 💔", ephemeral=True)
     return
 async def setup(bot):
-    await bot.add_cog(YourCog(bot))
+    await bot.add_cog(Tickets(bot))
