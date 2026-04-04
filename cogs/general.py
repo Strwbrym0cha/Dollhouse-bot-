@@ -34,4 +34,4 @@ class General(commands.Cog):
         await ctx.send(embed=embed)
 
 async def setup(bot):
-    await bot.add_cog(YourCog(bot))
+    await bot.add_cog(General(bot))
