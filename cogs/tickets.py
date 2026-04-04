@@ -20,6 +20,10 @@ class TicketView(View):
         if not category:
             category = await guild.create_category(CATEGORY_NAME)
 
+        if not staff_role:
+            await interaction.response.send_message("Staff role not found 💔", ephemeral=True)
+            return
+
         existing = discord.utils.get(guild.text_channels, name=f"ticket-{user.name}")
         if existing:
             await interaction.response.send_message("💖 You already have a ticket!", ephemeral=True)
@@ -42,6 +46,7 @@ class TicketView(View):
 
         await interaction.response.send_message(f"🎀 Created {channel.mention}", ephemeral=True)
 
+
 class CloseView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -49,6 +54,7 @@ class CloseView(View):
     @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red)
     async def close(self, interaction: discord.Interaction, button: Button):
         await interaction.channel.delete()
+
 
 class Tickets(commands.Cog):
     def __init__(self, bot):
@@ -61,11 +67,11 @@ class Tickets(commands.Cog):
     async def ticketpanel(self, ctx):
         embed = discord.Embed(
             title="🎟️ Dollhouse Support",
-            description="Click to open a ticket 💖",
+            description="Click below to open a ticket 💖",
             color=discord.Color.purple()
+        )
         await ctx.send(embed=embed, view=TicketView())
-if not staff_role:
-    await interaction.response.send_message("Staff role not found 💔", ephemeral=True)
-    return
+
+
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
