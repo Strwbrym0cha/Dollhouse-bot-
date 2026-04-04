@@ -14,7 +14,12 @@ async def on_ready():
     print(f"💖 Logged in as {bot.user}")
     bot.add_view(EventView())
     bot.add_view(StaffView())
-    
+    bot.add_view(AgeView())
+    bot.add_view(GenderView())
+    bot.add_view(LocationView())
+    bot.add_view(PronounView())
+    bot.add_view(SexualityView())
+    bot.add_view(EventView())
 async def load_cogs():
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and file != "__init__.py":
