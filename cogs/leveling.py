@@ -1,7 +1,6 @@
 from discord.ext import commands
 import random
-
-xp = {}
+from utils import database
 
 class Leveling(commands.Cog):
     def __init__(self, bot):
@@ -12,8 +11,8 @@ class Leveling(commands.Cog):
         if message.author.bot:
             return
 
-        user = message.author.id
-        xp[user] = xp.get(user, 0) + random.randint(5, 15)
+        xp_gain = random.randint(5, 15)
+        database.add_xp(message.author.id, xp_gain)
 
 def setup(bot):
     bot.add_cog(Leveling(bot))
