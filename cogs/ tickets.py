@@ -65,6 +65,8 @@ class Tickets(commands.Cog):
             color=discord.Color.purple()
         )
         await ctx.send(embed=embed, view=TicketView())
-
+if not staff_role:
+    await interaction.response.send_message("Staff role not found 💔", ephemeral=True)
+    return
 def setup(bot):
     bot.add_cog(Tickets(bot))
