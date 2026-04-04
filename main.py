@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import os
+import os, asyncio
 
 TOKEN = os.getenv("TOKEN")
 
@@ -11,7 +11,6 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 async def on_ready():
     print(f"💖 Logged in as {bot.user}")
 
-# 👇 NEW WAY (ASYNC LOAD)
 async def load_cogs():
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and file != "__init__.py":
@@ -19,13 +18,11 @@ async def load_cogs():
                 await bot.load_extension(f"cogs.{file[:-3]}")
                 print(f"Loaded {file}")
             except Exception as e:
-                print(f"Failed to load {file}: {e}")
+                print(f"Failed {file}: {e}")
 
-# 👇 RUN BOT PROPERLY
 async def main():
     async with bot:
         await load_cogs()
         await bot.start(TOKEN)
 
-import asyncio
 asyncio.run(main())
