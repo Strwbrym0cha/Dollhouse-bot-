@@ -1,8 +1,17 @@
 import discord
 from discord.ext import commands
 import os, asyncio
-from cogs.general import EventView
-from cogs.general import StaffView
+
+# 💖 IMPORT ALL VIEWS
+from cogs.general import (
+    EventView,
+    StaffView,
+    AgeView,
+    GenderView,
+    LocationView,
+    PronounView,
+    SexualityView
+)
 
 TOKEN = os.getenv("TOKEN")
 
@@ -12,6 +21,8 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f"💖 Logged in as {bot.user}")
+
+    # 💅 REGISTER PERSISTENT VIEWS
     bot.add_view(EventView())
     bot.add_view(StaffView())
     bot.add_view(AgeView())
@@ -19,7 +30,9 @@ async def on_ready():
     bot.add_view(LocationView())
     bot.add_view(PronounView())
     bot.add_view(SexualityView())
-    bot.add_view(EventView())
+
+
+# 🔌 LOAD COGS
 async def load_cogs():
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and file != "__init__.py":
@@ -29,9 +42,14 @@ async def load_cogs():
             except Exception as e:
                 print(f"Failed {file}: {e}")
 
+
+# 🚀 START BOT
 async def main():
     async with bot:
         await load_cogs()
         await bot.start(TOKEN)
+
+
+asyncio.run(main())
 
 asyncio.run(main())
