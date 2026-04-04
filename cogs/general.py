@@ -128,9 +128,9 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def rolespanel(self, ctx):
+@commands.command()
+@commands.has_permissions(administrator=True)
+async def rolespanel(self, ctx):
     await ctx.channel.purge(limit=10)
 
     await ctx.send("🎂 Age", view=AgeView())
