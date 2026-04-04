@@ -14,7 +14,7 @@ async def on_ready():
 # 👇 NEW WAY (ASYNC LOAD)
 async def load_cogs():
     for file in os.listdir("./cogs"):
-        if file.endswith(".py"):
+        if file.endswith(".py") and file != "__init__.py":
             try:
                 await bot.load_extension(f"cogs.{file[:-3]}")
                 print(f"Loaded {file}")
