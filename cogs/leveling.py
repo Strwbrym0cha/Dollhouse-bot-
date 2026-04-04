@@ -6,6 +6,7 @@ class Leveling(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # 👇 THIS IS on_message
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot:
@@ -20,6 +21,10 @@ class Leveling(commands.Cog):
             await message.channel.send(
                 f"💖 {message.author.mention} leveled up to {level}!"
             )
+
+        # 🚨 VERY IMPORTANT
+        await self.bot.process_commands(message)
+
 
 def setup(bot):
     bot.add_cog(Leveling(bot))
