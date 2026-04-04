@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 import os, asyncio
+from cogs.general import EventView
+from cogs.general import StaffView
 
 TOKEN = os.getenv("TOKEN")
 
@@ -10,7 +12,9 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f"💖 Logged in as {bot.user}")
-
+    bot.add_view(EventView())
+    bot.add_view(StaffView())
+    
 async def load_cogs():
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and file != "__init__.py":
