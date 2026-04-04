@@ -9,7 +9,7 @@ class TicketView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎟️ Open Ticket", style=discord.ButtonStyle.purple)
+    @discord.ui.button(label="🎟️ Open Ticket", style=discord.ButtonStyle.primary)
     async def open_ticket(self, interaction: discord.Interaction, button: Button):
         guild = interaction.guild
         user = interaction.user
