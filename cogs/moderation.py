@@ -17,5 +17,5 @@ class Moderation(commands.Cog):
     async def ban(self, ctx, member, *, reason=None):
         await member.ban(reason=reason)
 
-def setup(bot):
-    bot.add_cog(Moderation(bot))
+async def setup(bot):
+    await bot.add_cog(YourCog(bot))
