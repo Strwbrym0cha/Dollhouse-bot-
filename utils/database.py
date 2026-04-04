@@ -67,7 +67,7 @@ def add_rep(user_id, amount):
     )
 def check_level_up(user_id):
     xp = get_xp(user_id)
-    level = xp // 100  # simple formula
+    level = xp // 100
 
     cur.execute("SELECT level FROM users WHERE user_id = ?", (str(user_id),))
     current_level = cur.fetchone()[0]
