@@ -458,7 +458,7 @@ async def auto():
         ch=bot.guilds[0].get_channel(WELCOME)
         if ch and datetime.datetime.now().hour==10:
             await ch.send("🌸 good morning dolls 💖")
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=1)
 async def check_unverified():
     for guild in bot.guilds:
         role = discord.utils.get(guild.roles, name="Unverified Doll")
@@ -469,15 +469,34 @@ async def check_unverified():
             if role in member.roles:
                 joined = member.joined_at
 
-                if joined:
-                    now = datetime.datetime.now(datetime.UTC)
-                    diff = (now - joined).total_seconds()
+                if not joined:
+                    continue
 
-                    if diff > 900:  # ⏱️ 15 minutes
-                        try:
-                            await member.kick(reason="Not verified in time")
-                        except:
-                            pass
+                now = datetime.datetime.now(datetime.UTC)
+                diff = (now - joined).total_seconds()
+
+                # 💖 10 MIN WARNING
+                if 600 < diff < 660:
+                    try:
+                        await member.send(
+                            "💖 hey doll! please verify in the server or you’ll be removed soon ✨"
+                        )
+                    except:
+                        pass
+
+                # 🚨 15 MIN FINAL
+                if diff > 900:
+                    try:
+                        await member.send(
+                            "💔 you weren’t verified in time, come back anytime 💖"
+                        )
+                    except:
+                        pass
+
+                    try:
+                        await member.kick(reason="Not verified in time")
+                    except:
+                        pass
 # 🎮 EVENTS
 @tasks.loop(minutes=1)
 async def weekly():
