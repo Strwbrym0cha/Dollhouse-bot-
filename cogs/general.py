@@ -149,7 +149,14 @@ class EventView(View):
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+    @commands.command()
+    async def rolespanel(self, ctx):
+    await ctx.send("🎂 Age", view=AgeView())
+    await ctx.send("💅 Gender", view=GenderView())
+    await ctx.send("🌍 Location", view=LocationView())
+    await ctx.send("🏳️ Pronouns", view=PronounView())
+    await ctx.send("💖 Sexuality", view=SexualityView())
+    await ctx.send("🎮 Events", view=EventView())
     @commands.command()
     async def help(self, ctx):
         embed = discord.Embed(
