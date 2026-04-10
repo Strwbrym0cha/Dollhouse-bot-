@@ -133,6 +133,56 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed("💰 Richest Dolls", text))
 
+    # 💸 PAY
+    @commands.command()
+    async def pay(self, ctx, member: discord.Member, amount: int):
+        if amount <= 0:
+            return await ctx.send("💔 amount must be positive")
+
+        uid = str(ctx.author.id)
+        target = str(member.id)
+
+        if database.get_coins(uid) < amount:
+            return await ctx.send("💔 not enough coins")
+
+        database.remove_coins(uid, amount)
+        database.add_coins(target, amount)
+        await ctx.send(f"💖 paid {amount} coins to {member.mention}")
+
+    # 🎲 GAMBLE
+    @commands.command()
+    async def gamble(self, ctx, amount: int):
+        if amount <= 0:
+            return await ctx.send("💔 amount must be positive")
+
+        uid = str(ctx.author.id)
+        if database.get_coins(uid) < amount:
+            return await ctx.send("💔 not enough coins")
+
+        if random.random() < 0.5:
+            database.remove_coins(uid, amount)
+            await ctx.send(f"💔 you lost {amount} coins")
+        else:
+            database.add_coins(uid, amount)
+            await ctx.send(f"🎉 you won {amount} coins")
+
+    # 👑 ADMIN: SET COINS
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def setcoins(self, ctx, member: discord.Member, amount: int):
+        if amount < 0:
+            return await ctx.send("💔 amount cannot be negative")
+
+        database.set_coins(member.id, amount)
+        await ctx.send(f"💖 set {member.mention} coins to {amount}")
+
+    # 🧹 ADMIN: RESET USER
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def resetuser(self, ctx, member: discord.Member):
+        database.reset_user(member.id)
+        await ctx.send(f"💖 reset {member.mention}'s data")
+
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))

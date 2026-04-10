@@ -132,6 +132,13 @@ def add_rep(user_id, amount=1):
 def get_rep(user_id):
     add_user(user_id)
     cur.execute("SELECT rep FROM users WHERE user_id=%s", (str(user_id),))
+    )
+    conn.commit()
+
+
+def get_rep(user_id):
+    add_user(user_id)
+    cur.execute("SELECT rep FROM users WHERE user_id=%s", (str(user_id),))
     _execute(
         "SELECT xp FROM users WHERE user_id=%s",
         (str(user_id),)
@@ -150,6 +157,10 @@ def check_level_up(user_id):
     level = xp // 50
 
     cur.execute("SELECT level FROM users WHERE user_id=%s", (str(user_id),))
+    current = cur.fetchone()[0]
+
+    if level > current:
+        set_level(user_id, level)
     current = cur.fetchone()[0]
 
     if level > current:
@@ -196,6 +207,21 @@ def get_personality(guild_id):
 def get_coins(user_id):
     add_user(user_id)
     cur.execute("SELECT coins FROM users WHERE user_id=%s", (str(user_id),))
+    )
+    conn.commit()
+
+
+def get_personality(guild_id):
+    cur.execute("SELECT mode FROM personalities WHERE guild_id=%s", (str(guild_id),))
+    row = cur.fetchone()
+    return row[0] if row else "soft"
+
+
+# 💰 COINS SYSTEM
+
+def get_coins(user_id):
+    add_user(user_id)
+    cur.execute("SELECT coins FROM users WHERE user_id=%s", (str(user_id),))
 # 💰 COINS SYSTEM
 def get_coins(user_id):
     add_user(user_id)
@@ -226,6 +252,30 @@ def remove_coins(user_id, amount):
     conn.commit()
 
 
+def set_coins(user_id, amount):
+    add_user(user_id)
+    cur.execute(
+        "UPDATE users SET coins = %s WHERE user_id=%s",
+        (amount, str(user_id)),
+    )
+    conn.commit()
+
+
+def reset_user(user_id):
+    add_user(user_id)
+    cur.execute(
+        "UPDATE users SET xp=0, level=0, rep=0, coins=0, mood='neutral' WHERE user_id=%s",
+        (str(user_id),),
+    )
+    cur.execute("DELETE FROM daily_rewards WHERE user_id=%s", (str(user_id),))
+    cur.execute("DELETE FROM vip_users WHERE user_id=%s", (str(user_id),))
+    conn.commit()
+
+
+# 🎁 DAILY SYSTEM
+
+def check_daily(user_id):
+    cur.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s", (str(user_id),))
 # 🎁 DAILY SYSTEM
 def check_daily(user_id):
     cur.execute("SELECT last_claim FROM daily_rewards WHERE user_id=%s", (str(user_id),))
@@ -278,10 +328,19 @@ def add_vip(user_id):
     conn.commit()
 
 
+# 👑 VIP SYSTEM
+
+def add_vip(user_id):
+    cur.execute("INSERT INTO vip_users (user_id) VALUES (%s) ON CONFLICT DO NOTHING", (str(user_id),))
+    conn.commit()
+
+
 def is_vip(user_id):
     cur.execute("SELECT 1 FROM vip_users WHERE user_id=%s", (str(user_id),))
     return cur.fetchone() is not None
 
+
+# 🏆 LEADERBOARDS
 
 # 🏆 LEADERBOARDS
 def get_top_coins():

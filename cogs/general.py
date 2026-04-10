@@ -148,6 +148,43 @@ class General(commands.Cog):
         bot.add_view(RulesVerifyView())
 
     @commands.command()
+    async def help(self, ctx):
+        await ctx.send(
+            embed=doll_embed(
+                "💖 CORE",
+                """
+!help
+!dashboard
+
+🎀 **ROLES**
+!rolespanel
+
+🎟️ **SUPPORT**
+!ticketpanel
+
+💰 **ECONOMY**
+!profile
+!daily
+!shop
+!buy
+!balance
+!rich
+!pay
+!gamble
+
+🎮 **ENGAGEMENT**
+!rep
+!rank
+
+👑 **ADMIN**
+!give
+!setcoins
+!resetuser
+""",
+            )
+        )
+
+    @commands.command()
     async def menu(self, ctx):
         await ctx.send(
             embed=doll_embed(
@@ -220,6 +257,27 @@ class General(commands.Cog):
 🔞 **this is an 18+ server only**
 by staying, you confirm you are 18 or older
 
+━━━━━━━━━━━━━━━━━━━
+
+💖 **1. be kind, always**
+treat every doll with respect — no bullying or harassment
+
+💖 **2. no hate or discrimination**
+this is a safe and inclusive space for everyone
+
+💖 **3. keep it cute**
+light profanity is okay, but don’t use it to attack others
+
+💖 **4. no spam or unwanted promo**
+only promote in the correct channels
+
+💖 **5. nsfw stays in nsfw channels**
+must be verified to access
+
+💖 **6. listen to staff**
+our dollhouse team keeps everything safe and smooth
+
+━━━━━━━━━━━━━━━━━━━
 💖 1. be kind, always
 💖 2. no hate or discrimination
 💖 3. keep it cute
