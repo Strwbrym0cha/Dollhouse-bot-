@@ -1,19 +1,19 @@
+import io
+
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
 
 CATEGORY = "🎟️ Tickets"
 STAFF = "✨ Fairy Assistant"
+GIVEAWAY = 1487481479947616397
+
 
 class TicketView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(
-        label="🎟️ Open Ticket",
-        style=discord.ButtonStyle.primary,
-        custom_id="open_ticket"
-    )
+    @discord.ui.button(label="🎟️ Open Ticket", style=discord.ButtonStyle.primary, custom_id="open_ticket")
     async def open(self, interaction: discord.Interaction, button: Button):
         g = interaction.guild
         u = interaction.user
@@ -33,15 +33,10 @@ class TicketView(View):
         overwrites = {
             g.default_role: discord.PermissionOverwrite(view_channel=False),
             u: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-            staff: discord.PermissionOverwrite(view_channel=True, send_messages=True)
+            staff: discord.PermissionOverwrite(view_channel=True, send_messages=True),
         }
 
-        ch = await g.create_text_channel(
-            name=f"ticket-{u.id}",
-            category=cat,
-            overwrites=overwrites
-        )
-
+        ch = await g.create_text_channel(name=f"ticket-{u.id}", category=cat, overwrites=overwrites)
         await ch.send(f"{staff.mention} 💖 assisting {u.mention}", view=CloseView())
 
         await interaction.response.send_message(f"🎀 {ch.mention} created", ephemeral=True)
@@ -51,11 +46,7 @@ class CloseView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(
-        label="Close Ticket",
-        style=discord.ButtonStyle.danger,
-        custom_id="close_ticket"
-    )
+    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.danger, custom_id="close_ticket")
     async def close(self, interaction: discord.Interaction, button: Button):
         await interaction.channel.delete()
 
@@ -71,9 +62,22 @@ class Tickets(commands.Cog):
         embed = discord.Embed(
             title="🎟️ Support",
             description="Click to open a ticket 💖",
-            color=discord.Color.blurple()
+            color=discord.Color.blurple(),
         )
         await ctx.send(embed=embed, view=TicketView())
+
+    @commands.command()
+    async def close(self, ctx):
+        log = ctx.guild.get_channel(GIVEAWAY)
+        msgs = []
+        async for m in ctx.channel.history(limit=100):
+            msgs.append(f"{m.author}: {m.content}")
+
+        file = discord.File(io.StringIO("\n".join(msgs)), "transcript.txt")
+        if log:
+            await log.send("💌 Ticket Closed", file=file)
+
+        await ctx.channel.delete()
 
 
 async def setup(bot):
