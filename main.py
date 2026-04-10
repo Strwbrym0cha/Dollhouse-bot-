@@ -17,11 +17,12 @@ TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
-
 @bot.event
 async def on_ready():
-    print(f"💖 Logged in as {bot.user}")
+    print(f"Logged in as {bot.user}")
 
+    check_unverified.start()  # 🚨 THIS LINE IS CRITICAL
+    
     # 💅 REGISTER PERSISTENT VIEWS
     bot.add_view(EventView())
     bot.add_view(StaffView())
@@ -49,7 +50,5 @@ async def main():
         await load_cogs()
         await bot.start(TOKEN)
 
-
-asyncio.run(main())
 
 asyncio.run(main())
