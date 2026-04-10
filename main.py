@@ -20,8 +20,6 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
-
-    check_unverified.start()  # 🚨 THIS LINE IS CRITICAL
     
     # 💅 REGISTER PERSISTENT VIEWS
     bot.add_view(EventView())
