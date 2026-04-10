@@ -278,6 +278,12 @@ must be verified to access
 our dollhouse team keeps everything safe and smooth
 
 ━━━━━━━━━━━━━━━━━━━
+💖 1. be kind, always
+💖 2. no hate or discrimination
+💖 3. keep it cute
+💖 4. no spam or unwanted promo
+💖 5. nsfw stays in nsfw channels
+💖 6. listen to staff
 
 💖 click below to agree & enter ✨
 """,

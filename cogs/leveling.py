@@ -70,6 +70,14 @@ class Leveling(commands.Cog):
             level = xp // 50
             maybe_level = database.check_level_up(uid)
 
+
+            database.add_xp(uid, gain)
+            database.add_rep(uid, 1)
+
+            xp = database.get_xp(uid)
+            level = xp // 50
+            maybe_level = database.check_level_up(uid)
+
             # 🎀 LEVEL ROLES
             if level in LEVEL_ROLES:
                 role_name = LEVEL_ROLES[level]
