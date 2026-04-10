@@ -2,8 +2,6 @@ from discord.ext import commands
 from discord.ui import View, Select
 import discord
 
-await bot.load_extension("cogs.general")
-
 # 💖 UNIVERSAL ROLE SELECT
 class RoleSelect(Select):
     def __init__(self, placeholder, roles, emojis):
