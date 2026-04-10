@@ -13,6 +13,15 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    
+    # 💅 REGISTER PERSISTENT VIEWS
+    bot.add_view(EventView())
+    bot.add_view(StaffView())
+    bot.add_view(AgeView())
+    bot.add_view(GenderView())
+    bot.add_view(LocationView())
+    bot.add_view(PronounView())
+    bot.add_view(SexualityView())
 
 
 async def load_cogs():
