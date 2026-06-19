@@ -32,8 +32,10 @@ class Leveling(commands.Cog):
         uid = message.author.id
         database.ensure_user(uid, message.author.display_name)
 
-        # 🔢 COUNTING
-        if not message.content.startswith("!") and message.channel.id == COUNT_CH:
+        is_command = message.content.startswith("!")
+
+        # Counting channel
+        if not is_command and message.channel.id == COUNT_CH:
             if message.author == self.last:
                 await message.delete()
                 return
@@ -46,7 +48,8 @@ class Leveling(commands.Cog):
 
             if n != self.count + 1:
                 self.count = 0
-                await message.channel.send("💔 reset… start at 1 💖")
+                self.last = None
+                await message.channel.send("💔 reset... start at 1 💖")
                 return
 
             self.count = n
@@ -54,11 +57,11 @@ class Leveling(commands.Cog):
 
             if self.count == 50:
                 role = discord.utils.get(message.guild.roles, name="🌟 Featured Doll")
-                if role:
+                if role and role not in message.author.roles:
                     await message.author.add_roles(role)
 
-        # 💎 XP SYSTEM
-        if not message.content.startswith("!"):
+        # XP, rep, and personality responses only run on normal chat messages.
+        if not is_command:
             gain = random.randint(5, 10)
             if database.is_vip(uid):
                 gain *= 2
@@ -70,22 +73,13 @@ class Leveling(commands.Cog):
             level = xp // 50
             maybe_level = database.check_level_up(uid)
 
-
-            database.add_xp(uid, gain)
-            database.add_rep(uid, 1)
-
-            xp = database.get_xp(uid)
-            level = xp // 50
-            maybe_level = database.check_level_up(uid)
-
-            # 🎀 LEVEL ROLES
             if level in LEVEL_ROLES:
                 role_name = LEVEL_ROLES[level]
                 role = discord.utils.get(message.guild.roles, name=role_name)
 
                 if role and role not in message.author.roles:
-                    for r in LEVEL_ROLES.values():
-                        old_role = discord.utils.get(message.guild.roles, name=r)
+                    for old_name in LEVEL_ROLES.values():
+                        old_role = discord.utils.get(message.guild.roles, name=old_name)
                         if old_role and old_role in message.author.roles:
                             await message.author.remove_roles(old_role)
 
@@ -94,15 +88,14 @@ class Leveling(commands.Cog):
             if maybe_level:
                 await message.channel.send(f"💖 {message.author.mention} leveled up to {maybe_level}!")
 
-            # 🤖 PERSONALITY RESPONSES
             mode = database.get_personality(message.guild.id)
             content = message.content.lower()
 
             if "sad" in content:
                 if mode == "soft":
-                    await message.channel.send(f"🧸 {message.author.display_name} I’m here for you 💖")
+                    await message.channel.send(f"🧸 {message.author.display_name} I'm here for you 💖")
                 elif mode == "sassy":
-                    await message.channel.send("💅 stand up doll, you’re too pretty to be sad")
+                    await message.channel.send("💅 stand up doll, you're too pretty to be sad")
                 elif mode == "sweet":
                     await message.channel.send("💖 sending you hugs and love ✨")
                 elif mode == "strict":
@@ -110,16 +103,14 @@ class Leveling(commands.Cog):
 
             if "lonely" in content:
                 if mode == "soft":
-                    await message.channel.send("💖 you’re not alone here")
+                    await message.channel.send("💖 you're not alone here")
                 elif mode == "sassy":
-                    await message.channel.send("pls you have us, don’t be dramatic 💅")
+                    await message.channel.send("pls you have us, don't be dramatic 💅")
 
-        # ⚖️ SOFT MOD
-        if message.content.isupper() and len(message.content) > 15:
-            await message.delete()
-            await message.channel.send("💖 keep it cute")
-
-        await self.bot.process_commands(message)
+            # Soft mod for normal chat only.
+            if message.content.isupper() and len(message.content) > 15:
+                await message.delete()
+                await message.channel.send("💖 keep it cute")
 
     @commands.command()
     async def level(self, ctx):
@@ -137,9 +128,9 @@ class Leveling(commands.Cog):
 
         text = ""
         for i, (uid, xp) in enumerate(top, start=1):
-            m = ctx.guild.get_member(int(uid))
-            if m:
-                text += f"{i}. {m.display_name} — {xp}\n"
+            member = ctx.guild.get_member(int(uid))
+            if member:
+                text += f"{i}. {member.display_name} — {xp}\n"
 
         await ctx.send(embed=discord.Embed(title="💎 Top Dolls", description=text or "No data yet 💖"))
 
