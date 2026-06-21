@@ -155,6 +155,7 @@ class General(commands.Cog):
                 """
 !help
 !dashboard
+!schedule
 
 🎀 **ROLES**
 !rolespanel
@@ -180,6 +181,7 @@ class General(commands.Cog):
 !give
 !setcoins
 !resetuser
+!setschedulechannel
 """,
             )
         )
@@ -201,6 +203,9 @@ class General(commands.Cog):
 !level — level and xp
 !rep — show rep
 
+🗓️ **Events**
+!schedule — weekly event schedule
+
 🎟️ **Support**
 !ticketpanel — open ticket
 
@@ -212,6 +217,7 @@ class General(commands.Cog):
 !clear <amount> — delete messages
 !addvip @user — VIP
 !personality <mode>
+!setschedulechannel #channel
 """,
             )
         )
