@@ -268,8 +268,8 @@ class General(commands.Cog):
             embed=doll_embed(
                 "💖 DOLLHOUSE RULES",
                 """
-🔞 **this is an 18+ server only**
-by staying, you confirm you are 18 or older
+🌸 **this is a 16+ community**
+by staying, you confirm you are 16 or older
 
 ━━━━━━━━━━━━━━━━━━━
 
