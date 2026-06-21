@@ -156,6 +156,7 @@ class General(commands.Cog):
 !help
 !dashboard
 !schedule
+!qotd
 
 🎀 **ROLES**
 !rolespanel
@@ -184,6 +185,7 @@ class General(commands.Cog):
 !setschedulechannel
 !setcommunityevent
 !clearcommunityevent
+!setqotdchannel
 """,
             )
         )
@@ -197,6 +199,7 @@ class General(commands.Cog):
 💖 **Doll Commands**
 !doll — affirmation
 !selfcare — self care tip
+!qotd — random question of the day
 
 💎 **Progress**
 !profile — your stats
@@ -222,6 +225,7 @@ class General(commands.Cog):
 !setschedulechannel #channel
 !setcommunityevent <event>
 !clearcommunityevent
+!setqotdchannel #channel
 """,
             )
         )
