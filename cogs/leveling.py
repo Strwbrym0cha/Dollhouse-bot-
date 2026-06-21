@@ -5,7 +5,6 @@ from discord.ext import commands
 
 from utils import database
 
-XP_PER_LEVEL = 250
 LEVEL_ROLES = {
     1: "porcelain doll",
     5: "ribbon doll",
@@ -71,7 +70,7 @@ class Leveling(commands.Cog):
             database.add_rep(uid, 1)
 
             xp = database.get_xp(uid)
-            level = xp // XP_PER_LEVEL
+            level, current_level_xp, next_level_xp = database.get_level_info(xp)
             maybe_level = database.check_level_up(uid)
 
             if level in LEVEL_ROLES:
@@ -116,16 +115,19 @@ class Leveling(commands.Cog):
     @commands.command()
     async def level(self, ctx):
         xp = database.get_xp(ctx.author.id)
-        level = xp // XP_PER_LEVEL
-        next_level_xp = (level + 1) * XP_PER_LEVEL
-        await ctx.send(f"💖 Level {level} | XP {xp}/{next_level_xp}")
+        level, current_level_xp, next_level_xp = database.get_level_info(xp)
+        await ctx.send(f"💖 Level {level} | XP {xp - current_level_xp}/{next_level_xp - current_level_xp} ({xp} total)")
 
     @commands.command()
     async def rank(self, ctx):
         xp = database.get_xp(ctx.author.id)
-        level = xp // XP_PER_LEVEL
-        next_level_xp = (level + 1) * XP_PER_LEVEL
-        await ctx.send(f"💖 Rank Card\nLevel: {level}\nXP: {xp}/{next_level_xp}")
+        level, current_level_xp, next_level_xp = database.get_level_info(xp)
+        await ctx.send(
+            f"💖 Rank Card\n"
+            f"Level: {level}\n"
+            f"XP: {xp - current_level_xp}/{next_level_xp - current_level_xp}\n"
+            f"Total XP: {xp}"
+        )
 
     @commands.command()
     async def leaderboard(self, ctx):
@@ -135,7 +137,8 @@ class Leveling(commands.Cog):
         for i, (uid, xp) in enumerate(top, start=1):
             member = ctx.guild.get_member(int(uid))
             if member:
-                text += f"{i}. {member.display_name} — {xp}\n"
+                level, current_level_xp, next_level_xp = database.get_level_info(xp)
+                text += f"{i}. {member.display_name} — Level {level} ({xp} XP)\n"
 
         await ctx.send(embed=discord.Embed(title="💎 Top Dolls", description=text or "No data yet 💖"))
 
