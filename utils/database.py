@@ -89,6 +89,22 @@ CREATE TABLE IF NOT EXISTS community_events (
 )
 """)
 
+_execute("""
+CREATE TABLE IF NOT EXISTS qotd_channels (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT NOT NULL
+)
+""")
+
+_execute("""
+CREATE TABLE IF NOT EXISTS qotd_sends (
+    guild_id TEXT,
+    post_date TEXT,
+    question_number INTEGER,
+    PRIMARY KEY (guild_id, post_date)
+)
+""")
+
 conn.commit()
 
 
@@ -318,6 +334,43 @@ def get_community_event(guild_id):
 
 def clear_community_event(guild_id):
     _execute("DELETE FROM community_events WHERE guild_id=%s", (str(guild_id),))
+    conn.commit()
+
+
+def set_qotd_channel(guild_id, channel_id):
+    _execute(
+        """
+        INSERT INTO qotd_channels (guild_id, channel_id)
+        VALUES (%s, %s)
+        ON CONFLICT (guild_id) DO UPDATE SET channel_id=excluded.channel_id
+        """,
+        (str(guild_id), str(channel_id)),
+    )
+    conn.commit()
+
+
+def get_qotd_channels():
+    _execute("SELECT guild_id, channel_id FROM qotd_channels")
+    return [(int(guild_id), int(channel_id)) for guild_id, channel_id in cur.fetchall()]
+
+
+def qotd_sent(guild_id, post_date):
+    _execute(
+        "SELECT 1 FROM qotd_sends WHERE guild_id=%s AND post_date=%s",
+        (str(guild_id), str(post_date)),
+    )
+    return cur.fetchone() is not None
+
+
+def mark_qotd_sent(guild_id, post_date, question_number):
+    _execute(
+        """
+        INSERT INTO qotd_sends (guild_id, post_date, question_number)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (guild_id, post_date) DO NOTHING
+        """,
+        (str(guild_id), str(post_date), int(question_number)),
+    )
     conn.commit()
 
 
