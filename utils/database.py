@@ -66,6 +66,22 @@ CREATE TABLE IF NOT EXISTS vip_users (
 )
 """)
 
+_execute("""
+CREATE TABLE IF NOT EXISTS schedule_channels (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT NOT NULL
+)
+""")
+
+_execute("""
+CREATE TABLE IF NOT EXISTS schedule_sends (
+    guild_id TEXT,
+    event_date TEXT,
+    event_name TEXT,
+    PRIMARY KEY (guild_id, event_date, event_name)
+)
+""")
+
 conn.commit()
 
 
@@ -230,6 +246,49 @@ def add_vip(user_id):
 def is_vip(user_id):
     _execute("SELECT 1 FROM vip_users WHERE user_id=%s", (str(user_id),))
     return cur.fetchone() is not None
+
+
+def set_schedule_channel(guild_id, channel_id):
+    _execute(
+        """
+        INSERT INTO schedule_channels (guild_id, channel_id)
+        VALUES (%s, %s)
+        ON CONFLICT (guild_id) DO UPDATE SET channel_id=excluded.channel_id
+        """,
+        (str(guild_id), str(channel_id)),
+    )
+    conn.commit()
+
+
+def get_schedule_channel(guild_id):
+    _execute("SELECT channel_id FROM schedule_channels WHERE guild_id=%s", (str(guild_id),))
+    row = cur.fetchone()
+    return int(row[0]) if row else None
+
+
+def get_schedule_channels():
+    _execute("SELECT guild_id, channel_id FROM schedule_channels")
+    return [(int(guild_id), int(channel_id)) for guild_id, channel_id in cur.fetchall()]
+
+
+def schedule_message_sent(guild_id, event_date, event_name):
+    _execute(
+        "SELECT 1 FROM schedule_sends WHERE guild_id=%s AND event_date=%s AND event_name=%s",
+        (str(guild_id), str(event_date), event_name),
+    )
+    return cur.fetchone() is not None
+
+
+def mark_schedule_message_sent(guild_id, event_date, event_name):
+    _execute(
+        """
+        INSERT INTO schedule_sends (guild_id, event_date, event_name)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (guild_id, event_date, event_name) DO NOTHING
+        """,
+        (str(guild_id), str(event_date), event_name),
+    )
+    conn.commit()
 
 
 def get_top_coins():
