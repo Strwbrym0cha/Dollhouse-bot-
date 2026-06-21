@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from utils import database
 
+XP_PER_LEVEL = 250
 LEVEL_ROLES = {
     1: "porcelain doll",
     5: "ribbon doll",
@@ -62,15 +63,15 @@ class Leveling(commands.Cog):
 
         # XP, rep, and personality responses only run on normal chat messages.
         if not is_command:
-            gain = random.randint(5, 10)
+            gain = random.randint(2, 4)
             if database.is_vip(uid):
-                gain *= 2
+                gain += 2
 
             database.add_xp(uid, gain)
             database.add_rep(uid, 1)
 
             xp = database.get_xp(uid)
-            level = xp // 50
+            level = xp // XP_PER_LEVEL
             maybe_level = database.check_level_up(uid)
 
             if level in LEVEL_ROLES:
@@ -115,12 +116,16 @@ class Leveling(commands.Cog):
     @commands.command()
     async def level(self, ctx):
         xp = database.get_xp(ctx.author.id)
-        await ctx.send(f"💖 Level {xp // 50} | XP {xp}")
+        level = xp // XP_PER_LEVEL
+        next_level_xp = (level + 1) * XP_PER_LEVEL
+        await ctx.send(f"💖 Level {level} | XP {xp}/{next_level_xp}")
 
     @commands.command()
     async def rank(self, ctx):
         xp = database.get_xp(ctx.author.id)
-        await ctx.send(f"💖 Rank Card\nLevel: {xp // 50}\nXP: {xp}")
+        level = xp // XP_PER_LEVEL
+        next_level_xp = (level + 1) * XP_PER_LEVEL
+        await ctx.send(f"💖 Rank Card\nLevel: {level}\nXP: {xp}/{next_level_xp}")
 
     @commands.command()
     async def leaderboard(self, ctx):
