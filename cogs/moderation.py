@@ -94,7 +94,9 @@ class Moderation(commands.Cog):
         channel = member.guild.get_channel(WELCOME)
         if channel:
             await channel.send(
-                f"💖 {member.mention} welcome to the Dollhouse ✨\n🔐 Please verify to enter 💅"
+                f"🎀 Welcome to the Dollhouse, {member.mention}! 🩷\n\n"
+                "🌸 Please read the rules, verify, grab your roles, and stop by introductions so we can give you a warm welcome!\n\n"
+                "✨ Enjoy your stay, Pretty Doll! 🏡💖"
             )
 
     @tasks.loop(minutes=5)
