@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 from utils import database
 
 CENTRAL_TZ = ZoneInfo("America/Chicago")
-DEFAULT_QOTD_CHANNEL_ID = 1487481426705256661
+DEFAULT_QOTD_CHANNEL_ID = 1489465243913687160
 QUESTIONS = [
     (1, "What's your comfort food?"),
     (2, "If you could visit any country tomorrow, where would you go?"),
