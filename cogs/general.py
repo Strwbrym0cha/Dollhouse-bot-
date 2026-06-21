@@ -182,6 +182,8 @@ class General(commands.Cog):
 !setcoins
 !resetuser
 !setschedulechannel
+!setcommunityevent
+!clearcommunityevent
 """,
             )
         )
@@ -218,6 +220,8 @@ class General(commands.Cog):
 !addvip @user — VIP
 !personality <mode>
 !setschedulechannel #channel
+!setcommunityevent <event>
+!clearcommunityevent
 """,
             )
         )
