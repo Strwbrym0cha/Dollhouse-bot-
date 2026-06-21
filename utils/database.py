@@ -7,6 +7,7 @@ import psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL")
 SQLITE_PATH = os.getenv("SQLITE_PATH", "dollhouse.db")
 USE_SQLITE = False
+XP_PER_LEVEL = 250
 
 try:
     if DATABASE_URL:
@@ -162,7 +163,7 @@ def set_level(user_id, level):
 def check_level_up(user_id):
     add_user(user_id)
     xp = get_xp(user_id)
-    new_level = xp // 50
+    new_level = xp // XP_PER_LEVEL
 
     _execute("SELECT level FROM users WHERE user_id=%s", (str(user_id),))
     row = cur.fetchone()
