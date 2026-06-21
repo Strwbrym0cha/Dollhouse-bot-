@@ -24,13 +24,14 @@ class Economy(commands.Cog):
         if not data:
             return await ctx.send("💔 no data found")
 
-        xp, level, rep, coins = data[1], data[2], data[3], data[4]
+        xp, rep, coins = data[2], data[4], data[5]
+        level, current_level_xp, next_level_xp = database.get_level_info(xp)
 
         await ctx.send(embed=embed(
             "💖 Doll Profile",
             f"""
 ✨ Level: {level}
-💎 XP: {xp}
+💎 XP: {xp - current_level_xp}/{next_level_xp - current_level_xp}
 💖 Rep: {rep}
 💰 Coins: {coins}
 """
@@ -44,7 +45,7 @@ class Economy(commands.Cog):
         if database.check_daily(uid):
             return await ctx.send("💖 come back later")
 
-        xp = random.randint(50, 100)
+        xp = random.randint(15, 30)
         coins = random.randint(20, 50)
 
         database.give_daily(uid, xp, coins)
