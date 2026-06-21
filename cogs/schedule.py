@@ -7,6 +7,7 @@ from discord.ext import commands, tasks
 from utils import database
 
 CENTRAL_TZ = ZoneInfo("America/Chicago")
+DEFAULT_SCHEDULE_CHANNEL_ID = 1487481426705256661
 SCHEDULE = {
     0: "Chill VC",
     2: "Game Night",
@@ -33,6 +34,18 @@ class Schedule(commands.Cog):
     def cog_unload(self):
         self.schedule_messages.cancel()
 
+    def get_announcement_targets(self):
+        targets = {
+            guild_id: channel_id
+            for guild_id, channel_id in database.get_schedule_channels()
+        }
+
+        default_channel = self.bot.get_channel(DEFAULT_SCHEDULE_CHANNEL_ID)
+        if default_channel and default_channel.guild:
+            targets.setdefault(default_channel.guild.id, DEFAULT_SCHEDULE_CHANNEL_ID)
+
+        return targets.items()
+
     @tasks.loop(minutes=1)
     async def schedule_messages(self):
         now = datetime.now(CENTRAL_TZ)
@@ -43,7 +56,7 @@ class Schedule(commands.Cog):
 
         event_date = now.date().isoformat()
 
-        for guild_id, channel_id in database.get_schedule_channels():
+        for guild_id, channel_id in self.get_announcement_targets():
             if database.schedule_message_sent(guild_id, event_date, event_name):
                 continue
 
