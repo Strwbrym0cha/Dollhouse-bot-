@@ -7,7 +7,6 @@ import psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL")
 SQLITE_PATH = os.getenv("SQLITE_PATH", "dollhouse.db")
 USE_SQLITE = False
-XP_PER_LEVEL = 250
 
 try:
     if DATABASE_URL:
@@ -19,6 +18,37 @@ except Exception:
     conn = sqlite3.connect(SQLITE_PATH)
 
 cur = conn.cursor()
+
+
+def xp_needed_for_next_level(level):
+    if level < 10:
+        return (level + 1) * 50
+    return 500 + ((level - 9) * 100)
+
+
+def total_xp_for_level(level):
+    total = 0
+    for current_level in range(level):
+        total += xp_needed_for_next_level(current_level)
+    return total
+
+
+def level_from_xp(xp):
+    xp = int(xp)
+    level = 0
+
+    while xp >= xp_needed_for_next_level(level):
+        xp -= xp_needed_for_next_level(level)
+        level += 1
+
+    return level
+
+
+def get_level_info(xp):
+    level = level_from_xp(xp)
+    current_level_xp = total_xp_for_level(level)
+    next_level_xp = current_level_xp + xp_needed_for_next_level(level)
+    return level, current_level_xp, next_level_xp
 
 
 def _normalize_query(query: str) -> str:
@@ -163,7 +193,7 @@ def set_level(user_id, level):
 def check_level_up(user_id):
     add_user(user_id)
     xp = get_xp(user_id)
-    new_level = xp // XP_PER_LEVEL
+    new_level = level_from_xp(xp)
 
     _execute("SELECT level FROM users WHERE user_id=%s", (str(user_id),))
     row = cur.fetchone()
