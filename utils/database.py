@@ -82,6 +82,13 @@ CREATE TABLE IF NOT EXISTS schedule_sends (
 )
 """)
 
+_execute("""
+CREATE TABLE IF NOT EXISTS community_events (
+    guild_id TEXT PRIMARY KEY,
+    event_name TEXT NOT NULL
+)
+""")
+
 conn.commit()
 
 
@@ -288,6 +295,29 @@ def mark_schedule_message_sent(guild_id, event_date, event_name):
         """,
         (str(guild_id), str(event_date), event_name),
     )
+    conn.commit()
+
+
+def set_community_event(guild_id, event_name):
+    _execute(
+        """
+        INSERT INTO community_events (guild_id, event_name)
+        VALUES (%s, %s)
+        ON CONFLICT (guild_id) DO UPDATE SET event_name=excluded.event_name
+        """,
+        (str(guild_id), event_name),
+    )
+    conn.commit()
+
+
+def get_community_event(guild_id):
+    _execute("SELECT event_name FROM community_events WHERE guild_id=%s", (str(guild_id),))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
+def clear_community_event(guild_id):
+    _execute("DELETE FROM community_events WHERE guild_id=%s", (str(guild_id),))
     conn.commit()
 
 
