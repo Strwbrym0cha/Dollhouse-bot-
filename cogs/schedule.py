@@ -1,0 +1,86 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+import discord
+from discord.ext import commands, tasks
+
+from utils import database
+
+CENTRAL_TZ = ZoneInfo("America/Chicago")
+SCHEDULE = {
+    0: "Chill VC",
+    2: "Game Night",
+    4: "Community Event",
+    6: "Movie Night",
+}
+
+
+def schedule_embed(event_name):
+    embed = discord.Embed(
+        title="💖 Dollhouse Event Today",
+        description=f"**{event_name}** starts today. Come hang out with us!",
+        color=discord.Color.from_rgb(255, 182, 193),
+    )
+    embed.set_footer(text="Posted at 12 PM Central")
+    return embed
+
+
+class Schedule(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.schedule_messages.start()
+
+    def cog_unload(self):
+        self.schedule_messages.cancel()
+
+    @tasks.loop(minutes=1)
+    async def schedule_messages(self):
+        now = datetime.now(CENTRAL_TZ)
+        event_name = SCHEDULE.get(now.weekday())
+
+        if not event_name or now.hour != 12 or now.minute > 4:
+            return
+
+        event_date = now.date().isoformat()
+
+        for guild_id, channel_id in database.get_schedule_channels():
+            if database.schedule_message_sent(guild_id, event_date, event_name):
+                continue
+
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                continue
+
+            await channel.send(embed=schedule_embed(event_name))
+            database.mark_schedule_message_sent(guild_id, event_date, event_name)
+
+    @schedule_messages.before_loop
+    async def before_schedule_messages(self):
+        await self.bot.wait_until_ready()
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def setschedulechannel(self, ctx, channel: discord.TextChannel = None):
+        channel = channel or ctx.channel
+        database.set_schedule_channel(ctx.guild.id, channel.id)
+        await ctx.send(f"💖 schedule messages will post in {channel.mention} at 12 PM Central")
+
+    @commands.command()
+    async def schedule(self, ctx):
+        await ctx.send(
+            embed=discord.Embed(
+                title="🗓️ Dollhouse Schedule",
+                description=(
+                    "Monday: Chill VC\n"
+                    "Wednesday: Game Night\n"
+                    "Friday: Community Event\n"
+                    "Sunday: Movie Night\n\n"
+                    "Messages post at 12 PM Central."
+                ),
+                color=discord.Color.from_rgb(255, 182, 193),
+            )
+        )
+
+
+async def setup(bot):
+    await bot.add_cog(Schedule(bot))
